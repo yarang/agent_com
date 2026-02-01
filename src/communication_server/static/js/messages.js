@@ -12,8 +12,8 @@ const pageSize = 50;
 let isLoading = false;
 let hasMore = true;
 
-// DOM elements
-const elements = {
+// DOM messageElements
+const messageElements = {
     messagesList: null,
     messagesLoading: null,
     messageProjectFilter: null,
@@ -35,34 +35,34 @@ const elements = {
 async function initMessages() {
     console.log('Initializing messages component...');
 
-    // Cache DOM elements
-    elements.messagesList = document.getElementById('messagesList');
-    elements.messagesLoading = document.getElementById('messagesLoading');
-    elements.messageProjectFilter = document.getElementById('messageProjectFilter');
-    elements.refreshMessagesBtn = document.getElementById('refreshMessagesBtn');
-    elements.messageModal = document.getElementById('messageModal');
-    elements.messageModalOverlay = document.getElementById('messageModalOverlay');
-    elements.closeMessageModal = document.getElementById('closeMessageModal');
-    elements.modalSender = document.getElementById('modalSender');
-    elements.modalRecipient = document.getElementById('modalRecipient');
-    elements.modalTimestamp = document.getElementById('modalTimestamp');
-    elements.modalContent = document.getElementById('modalContent');
-    elements.modalProject = document.getElementById('modalProject');
-    elements.modalType = document.getElementById('modalType');
+    // Cache DOM messageElements
+    messageElements.messagesList = document.getElementById('messagesList');
+    messageElements.messagesLoading = document.getElementById('messagesLoading');
+    messageElements.messageProjectFilter = document.getElementById('messageProjectFilter');
+    messageElements.refreshMessagesBtn = document.getElementById('refreshMessagesBtn');
+    messageElements.messageModal = document.getElementById('messageModal');
+    messageElements.messageModalOverlay = document.getElementById('messageModalOverlay');
+    messageElements.closeMessageModal = document.getElementById('closeMessageModal');
+    messageElements.modalSender = document.getElementById('modalSender');
+    messageElements.modalRecipient = document.getElementById('modalRecipient');
+    messageElements.modalTimestamp = document.getElementById('modalTimestamp');
+    messageElements.modalContent = document.getElementById('modalContent');
+    messageElements.modalProject = document.getElementById('modalProject');
+    messageElements.modalType = document.getElementById('modalType');
 
-    if (!elements.messagesList) {
+    if (!messageElements.messagesList) {
         console.warn('Messages list element not found');
         return;
     }
 
     // Set up event listeners
-    elements.messageProjectFilter?.addEventListener('change', handleProjectFilterChange);
-    elements.refreshMessagesBtn?.addEventListener('click', refreshMessages);
-    elements.closeMessageModal?.addEventListener('click', closeMessageModal);
-    elements.messageModalOverlay?.addEventListener('click', closeMessageModal);
+    messageElements.messageProjectFilter?.addEventListener('change', handleProjectFilterChange);
+    messageElements.refreshMessagesBtn?.addEventListener('click', refreshMessages);
+    messageElements.closeMessageModal?.addEventListener('click', closeMessageModal);
+    messageElements.messageModalOverlay?.addEventListener('click', closeMessageModal);
 
     // Set up infinite scroll
-    elements.messagesList.addEventListener('scroll', handleScroll);
+    messageElements.messagesList.addEventListener('scroll', handleScroll);
 
     // Load initial messages
     await loadMessages();
@@ -126,9 +126,9 @@ async function loadMessages(reset = true) {
  * Render messages list
  */
 function renderMessages() {
-    if (!elements.messagesList) return;
+    if (!messageElements.messagesList) return;
 
-    elements.messagesList.innerHTML = messages.map(msg => createMessageItem(msg)).join('');
+    messageElements.messagesList.innerHTML = messages.map(msg => createMessageItem(msg)).join('');
 }
 
 /**
@@ -167,9 +167,9 @@ function createMessageItem(msg) {
  * Render empty state
  */
 function renderEmptyState() {
-    if (!elements.messagesList) return;
+    if (!messageElements.messagesList) return;
 
-    elements.messagesList.innerHTML = `
+    messageElements.messagesList.innerHTML = `
         <div class="empty-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
@@ -186,9 +186,9 @@ function renderEmptyState() {
  * Render error state
  */
 function renderErrorState() {
-    if (!elements.messagesList) return;
+    if (!messageElements.messagesList) return;
 
-    elements.messagesList.innerHTML = `
+    messageElements.messagesList.innerHTML = `
         <div class="error-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -211,29 +211,29 @@ async function viewMessageDetail(messageId) {
         const message = await fetchMessageDetail(messageId);
 
         // Populate modal
-        if (elements.modalSender) {
-            elements.modalSender.textContent = message.from_agent || 'Unknown';
+        if (messageElements.modalSender) {
+            messageElements.modalSender.textContent = message.from_agent || 'Unknown';
         }
-        if (elements.modalRecipient) {
-            elements.modalRecipient.textContent = message.to_agent || 'All';
+        if (messageElements.modalRecipient) {
+            messageElements.modalRecipient.textContent = message.to_agent || 'All';
         }
-        if (elements.modalTimestamp) {
-            elements.modalTimestamp.textContent = formatFullDate(message.timestamp);
+        if (messageElements.modalTimestamp) {
+            messageElements.modalTimestamp.textContent = formatFullDate(message.timestamp);
         }
-        if (elements.modalContent) {
-            elements.modalContent.textContent = message.content || '';
+        if (messageElements.modalContent) {
+            messageElements.modalContent.textContent = message.content || '';
         }
-        if (elements.modalProject) {
-            elements.modalProject.textContent = message.project_id || 'No Project';
-            elements.modalProject.style.display = message.project_id ? 'inline-block' : 'none';
+        if (messageElements.modalProject) {
+            messageElements.modalProject.textContent = message.project_id || 'No Project';
+            messageElements.modalProject.style.display = message.project_id ? 'inline-block' : 'none';
         }
-        if (elements.modalType) {
-            elements.modalType.textContent = message.message_type || 'direct';
+        if (messageElements.modalType) {
+            messageElements.modalType.textContent = message.message_type || 'direct';
         }
 
         // Show modal
-        if (elements.messageModal) {
-            elements.messageModal.style.display = 'flex';
+        if (messageElements.messageModal) {
+            messageElements.messageModal.style.display = 'flex';
         }
     } catch (error) {
         console.error('Failed to load message detail:', error);
@@ -245,8 +245,8 @@ async function viewMessageDetail(messageId) {
  * Close message modal
  */
 function closeMessageModal() {
-    if (elements.messageModal) {
-        elements.messageModal.style.display = 'none';
+    if (messageElements.messageModal) {
+        messageElements.messageModal.style.display = 'none';
     }
 }
 
@@ -254,9 +254,9 @@ function closeMessageModal() {
  * Handle project filter change
  */
 async function handleProjectFilterChange() {
-    if (!elements.messageProjectFilter) return;
+    if (!messageElements.messageProjectFilter) return;
 
-    selectedProjectId = elements.messageProjectFilter.value || null;
+    selectedProjectId = messageElements.messageProjectFilter.value || null;
     await loadMessages(true);
 }
 
@@ -271,9 +271,9 @@ async function refreshMessages() {
  * Handle scroll for infinite scroll
  */
 function handleScroll() {
-    if (!elements.messagesList || isLoading || !hasMore) return;
+    if (!messageElements.messagesList || isLoading || !hasMore) return;
 
-    const { scrollTop, scrollHeight, clientHeight } = elements.messagesList;
+    const { scrollTop, scrollHeight, clientHeight } = messageElements.messagesList;
 
     // Load more when scrolled to 80% of the list
     if (scrollTop + clientHeight >= scrollHeight * 0.8) {
@@ -285,8 +285,8 @@ function handleScroll() {
  * Show/hide loading indicator
  */
 function showLoading(show) {
-    if (elements.messagesLoading) {
-        elements.messagesLoading.style.display = show ? 'flex' : 'none';
+    if (messageElements.messagesLoading) {
+        messageElements.messagesLoading.style.display = show ? 'flex' : 'none';
     }
 }
 
@@ -294,13 +294,13 @@ function showLoading(show) {
  * Update project filter options
  */
 function updateProjectFilter(projects) {
-    if (!elements.messageProjectFilter) return;
+    if (!messageElements.messageProjectFilter) return;
 
     // Get current selected value
-    const currentValue = elements.messageProjectFilter.value;
+    const currentValue = messageElements.messageProjectFilter.value;
 
     // Clear existing options (keep first "All Projects" option)
-    elements.messageProjectFilter.innerHTML = `
+    messageElements.messageProjectFilter.innerHTML = `
         <option value="" data-i18n="messages.allProjects">All Projects</option>
     `;
 
@@ -309,12 +309,12 @@ function updateProjectFilter(projects) {
         const option = document.createElement('option');
         option.value = project.project_id || '';
         option.textContent = project.name || 'All Projects';
-        elements.messageProjectFilter.appendChild(option);
+        messageElements.messageProjectFilter.appendChild(option);
     });
 
     // Restore selected value
     if (currentValue) {
-        elements.messageProjectFilter.value = currentValue;
+        messageElements.messageProjectFilter.value = currentValue;
     }
 }
 

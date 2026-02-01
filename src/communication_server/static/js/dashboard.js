@@ -16,8 +16,8 @@ let currentChartType = 'hourly'; // hourly, daily, top
 let chartInstance = null;
 let i18n = null; // Will be initialized from i18n.js
 
-// DOM elements (cached for performance)
-const elements = {
+// DOM dashboardElements (cached for performance)
+const dashboardElements = {
     totalAgents: null,
     activeAgents: null,
     totalMessages: null,
@@ -28,7 +28,7 @@ const elements = {
     currentTime: null,
     connectionStatus: null,
     activeConnections: null,
-    // Agent registration elements
+    // Agent registration dashboardElements
     agentNickname: null,
     registerAgentBtn: null,
     registrationResult: null,
@@ -36,10 +36,10 @@ const elements = {
     registrationErrorText: null,
     generatedApiKey: null,
     copyApiKeyBtn: null,
-    // Agent management elements
+    // Agent management dashboardElements
     agentManagementBody: null,
     refreshManagementBtn: null,
-    // Chart elements
+    // Chart dashboardElements
     activityChart: null,
     chartTabs: null,
 };
@@ -53,7 +53,7 @@ async function initDashboard() {
     // Wait for i18n to be ready
     await waitForI18n();
 
-    // Cache DOM elements
+    // Cache DOM dashboardElements
     cacheElements();
 
     // Start current time update
@@ -65,15 +65,15 @@ async function initDashboard() {
 
     // Set up refresh button handlers
     document.getElementById('refreshBtn')?.addEventListener('click', refreshData);
-    elements.refreshManagementBtn?.addEventListener('click', refreshAgentManagement);
+    dashboardElements.refreshManagementBtn?.addEventListener('click', refreshAgentManagement);
 
     // Set up chart tab handlers
     setupChartTabs();
 
     // Set up agent registration handlers
-    elements.registerAgentBtn?.addEventListener('click', handleAgentRegistration);
-    elements.copyApiKeyBtn?.addEventListener('click', handleCopyApiKey);
-    elements.agentNickname?.addEventListener('keypress', (e) => {
+    dashboardElements.registerAgentBtn?.addEventListener('click', handleAgentRegistration);
+    dashboardElements.copyApiKeyBtn?.addEventListener('click', handleCopyApiKey);
+    dashboardElements.agentNickname?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             handleAgentRegistration();
         }
@@ -95,32 +95,32 @@ async function initDashboard() {
 }
 
 /**
- * Cache DOM elements for performance
+ * Cache DOM dashboardElements for performance
  */
 function cacheElements() {
-    elements.totalAgents = document.getElementById('totalAgents');
-    elements.activeAgents = document.getElementById('activeAgents');
-    elements.totalMessages = document.getElementById('totalMessages');
-    elements.totalMeetings = document.getElementById('totalMeetings');
-    elements.decisionsMade = document.getElementById('decisionsMade');
-    elements.agentsGrid = document.getElementById('agentsGrid');
-    elements.timelineContainer = document.getElementById('timelineContainer');
-    elements.currentTime = document.getElementById('currentTime');
-    elements.activeConnections = document.getElementById('activeConnections');
-    // Agent registration elements
-    elements.agentNickname = document.getElementById('agentNickname');
-    elements.registerAgentBtn = document.getElementById('registerAgentBtn');
-    elements.registrationResult = document.getElementById('registrationResult');
-    elements.registrationError = document.getElementById('registrationError');
-    elements.registrationErrorText = document.getElementById('registrationErrorText');
-    elements.generatedApiKey = document.getElementById('generatedApiKey');
-    elements.copyApiKeyBtn = document.getElementById('copyApiKeyBtn');
-    // Agent management elements
-    elements.agentManagementBody = document.getElementById('agentManagementBody');
-    elements.refreshManagementBtn = document.getElementById('refreshManagementBtn');
-    // Chart elements
-    elements.activityChart = document.getElementById('activityChart');
-    elements.chartTabs = document.querySelectorAll('.chart-tab');
+    dashboardElements.totalAgents = document.getElementById('totalAgents');
+    dashboardElements.activeAgents = document.getElementById('activeAgents');
+    dashboardElements.totalMessages = document.getElementById('totalMessages');
+    dashboardElements.totalMeetings = document.getElementById('totalMeetings');
+    dashboardElements.decisionsMade = document.getElementById('decisionsMade');
+    dashboardElements.agentsGrid = document.getElementById('agentsGrid');
+    dashboardElements.timelineContainer = document.getElementById('timelineContainer');
+    dashboardElements.currentTime = document.getElementById('currentTime');
+    dashboardElements.activeConnections = document.getElementById('activeConnections');
+    // Agent registration dashboardElements
+    dashboardElements.agentNickname = document.getElementById('agentNickname');
+    dashboardElements.registerAgentBtn = document.getElementById('registerAgentBtn');
+    dashboardElements.registrationResult = document.getElementById('registrationResult');
+    dashboardElements.registrationError = document.getElementById('registrationError');
+    dashboardElements.registrationErrorText = document.getElementById('registrationErrorText');
+    dashboardElements.generatedApiKey = document.getElementById('generatedApiKey');
+    dashboardElements.copyApiKeyBtn = document.getElementById('copyApiKeyBtn');
+    // Agent management dashboardElements
+    dashboardElements.agentManagementBody = document.getElementById('agentManagementBody');
+    dashboardElements.refreshManagementBtn = document.getElementById('refreshManagementBtn');
+    // Chart dashboardElements
+    dashboardElements.activityChart = document.getElementById('activityChart');
+    dashboardElements.chartTabs = document.querySelectorAll('.chart-tab');
 }
 
 /**
@@ -218,13 +218,13 @@ function t(key, params = {}) {
  * Setup chart tab switching
  */
 function setupChartTabs() {
-    elements.chartTabs.forEach(tab => {
+    dashboardElements.chartTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const chartType = tab.dataset.chart;
             switchChart(chartType);
 
             // Update active tab
-            elements.chartTabs.forEach(t => t.classList.remove('active'));
+            dashboardElements.chartTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
         });
     });
@@ -323,11 +323,11 @@ async function refreshData() {
 function updateStatistics() {
     if (!statistics) return;
 
-    animateValue(elements.totalAgents, parseInt(elements.totalAgents.textContent) || 0, statistics.total_agents || 0, 500);
-    animateValue(elements.activeAgents, parseInt(elements.activeAgents.textContent) || 0, statistics.active_agents || 0, 500);
-    animateValue(elements.totalMessages, parseInt(elements.totalMessages.textContent) || 0, statistics.total_messages || 0, 500);
-    animateValue(elements.totalMeetings, parseInt(elements.totalMeetings.textContent) || 0, statistics.total_meetings || 0, 500);
-    animateValue(elements.decisionsMade, parseInt(elements.decisionsMade.textContent) || 0, statistics.decisions_made || 0, 500);
+    animateValue(dashboardElements.totalAgents, parseInt(dashboardElements.totalAgents.textContent) || 0, statistics.total_agents || 0, 500);
+    animateValue(dashboardElements.activeAgents, parseInt(dashboardElements.activeAgents.textContent) || 0, statistics.active_agents || 0, 500);
+    animateValue(dashboardElements.totalMessages, parseInt(dashboardElements.totalMessages.textContent) || 0, statistics.total_messages || 0, 500);
+    animateValue(dashboardElements.totalMeetings, parseInt(dashboardElements.totalMeetings.textContent) || 0, statistics.total_meetings || 0, 500);
+    animateValue(dashboardElements.decisionsMade, parseInt(dashboardElements.decisionsMade.textContent) || 0, statistics.decisions_made || 0, 500);
 }
 
 /**
@@ -356,10 +356,10 @@ function animateValue(element, start, end, duration) {
  * Render agents grid
  */
 function renderAgents() {
-    if (!elements.agentsGrid) return;
+    if (!dashboardElements.agentsGrid) return;
 
     if (agents.length === 0) {
-        elements.agentsGrid.innerHTML = `
+        dashboardElements.agentsGrid.innerHTML = `
             <div class="empty-state">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -372,7 +372,7 @@ function renderAgents() {
         return;
     }
 
-    elements.agentsGrid.innerHTML = agents.map(agent => createAgentCard(agent)).join('');
+    dashboardElements.agentsGrid.innerHTML = agents.map(agent => createAgentCard(agent)).join('');
 }
 
 /**
@@ -443,9 +443,9 @@ function createAgentCard(agent) {
  * Update chart based on current tab
  */
 function updateChart() {
-    if (!activity || !elements.activityChart) return;
+    if (!activity || !dashboardElements.activityChart) return;
 
-    const ctx = elements.activityChart.getContext('2d');
+    const ctx = dashboardElements.activityChart.getContext('2d');
 
     // Destroy existing chart
     if (chartInstance) {
@@ -623,9 +623,9 @@ function getChartOptions(title) {
  * Render timeline
  */
 function renderTimeline() {
-    if (!elements.timelineContainer || timeline.length === 0) {
-        if (elements.timelineContainer) {
-            elements.timelineContainer.innerHTML = `
+    if (!dashboardElements.timelineContainer || timeline.length === 0) {
+        if (dashboardElements.timelineContainer) {
+            dashboardElements.timelineContainer.innerHTML = `
                 <div class="empty-state">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -639,7 +639,7 @@ function renderTimeline() {
         return;
     }
 
-    elements.timelineContainer.innerHTML = `<div class="timeline-list">${timeline.map(event => createTimelineItem(event)).join('')}</div>`;
+    dashboardElements.timelineContainer.innerHTML = `<div class="timeline-list">${timeline.map(event => createTimelineItem(event)).join('')}</div>`;
 }
 
 /**
@@ -798,13 +798,13 @@ function onWebSocketDisconnect() {
  * Update current time display
  */
 function updateCurrentTime() {
-    if (!elements.currentTime) return;
+    if (!dashboardElements.currentTime) return;
 
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
     const seconds = now.getSeconds().toString().padStart(2, '0');
-    elements.currentTime.textContent = `${hours}:${minutes}:${seconds}`;
+    dashboardElements.currentTime.textContent = `${hours}:${minutes}:${seconds}`;
 }
 
 /**
@@ -836,7 +836,7 @@ setInterval(() => {
  * Handle agent registration
  */
 async function handleAgentRegistration() {
-    const nickname = elements.agentNickname?.value?.trim();
+    const nickname = dashboardElements.agentNickname?.value?.trim();
 
     if (!nickname) {
         showRegistrationError(t('registration.errorNicknameRequired'));
@@ -848,8 +848,8 @@ async function handleAgentRegistration() {
         return;
     }
 
-    elements.registerAgentBtn.disabled = true;
-    elements.registerAgentBtn.innerHTML = `
+    dashboardElements.registerAgentBtn.disabled = true;
+    dashboardElements.registerAgentBtn.innerHTML = `
         <div class="spinner-small"></div>
         ${t('registration.generating')}
     `;
@@ -857,15 +857,15 @@ async function handleAgentRegistration() {
     try {
         const result = await createAgentToken(nickname);
         showRegistrationResult(result.token, nickname);
-        elements.agentNickname.value = '';
+        dashboardElements.agentNickname.value = '';
         await loadRegisteredAgents();
 
     } catch (error) {
         console.error('에이전트 등록 오류:', error);
         showRegistrationError(error.message || t('registration.errorGeneric'));
     } finally {
-        elements.registerAgentBtn.disabled = false;
-        elements.registerAgentBtn.innerHTML = `
+        dashboardElements.registerAgentBtn.disabled = false;
+        dashboardElements.registerAgentBtn.innerHTML = `
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 5v14M5 12h14"></path>
             </svg>
@@ -878,30 +878,30 @@ async function handleAgentRegistration() {
  * Show registration result
  */
 function showRegistrationResult(token, nickname) {
-    elements.registrationResult.style.display = 'block';
-    elements.registrationError.style.display = 'none';
-    elements.generatedApiKey.textContent = token;
+    dashboardElements.registrationResult.style.display = 'block';
+    dashboardElements.registrationError.style.display = 'none';
+    dashboardElements.generatedApiKey.textContent = token;
 }
 
 /**
  * Show registration error
  */
 function showRegistrationError(message) {
-    elements.registrationResult.style.display = 'none';
-    elements.registrationError.style.display = 'flex';
-    elements.registrationErrorText.textContent = message;
+    dashboardElements.registrationResult.style.display = 'none';
+    dashboardElements.registrationError.style.display = 'flex';
+    dashboardElements.registrationErrorText.textContent = message;
 }
 
 /**
  * Handle copy API key button
  */
 async function handleCopyApiKey() {
-    const apiKey = elements.generatedApiKey?.textContent;
+    const apiKey = dashboardElements.generatedApiKey?.textContent;
     if (!apiKey) return;
 
     const success = await copyToClipboard(apiKey);
 
-    const btn = elements.copyApiKeyBtn;
+    const btn = dashboardElements.copyApiKeyBtn;
     if (success) {
         btn.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -949,10 +949,10 @@ async function refreshAgentManagement() {
  * Render agent management table
  */
 function renderAgentManagementTable() {
-    if (!elements.agentManagementBody) return;
+    if (!dashboardElements.agentManagementBody) return;
 
     if (registeredAgents.length === 0) {
-        elements.agentManagementBody.innerHTML = `
+        dashboardElements.agentManagementBody.innerHTML = `
             <tr>
                 <td colspan="4">
                     <div class="empty-state">
@@ -969,7 +969,7 @@ function renderAgentManagementTable() {
         return;
     }
 
-    elements.agentManagementBody.innerHTML = registeredAgents.map(agent => createAgentManagementRow(agent)).join('');
+    dashboardElements.agentManagementBody.innerHTML = registeredAgents.map(agent => createAgentManagementRow(agent)).join('');
 }
 
 /**
@@ -1008,9 +1008,9 @@ function createAgentManagementRow(agent) {
  * Render agent management error state
  */
 function renderAgentManagementError() {
-    if (!elements.agentManagementBody) return;
+    if (!dashboardElements.agentManagementBody) return;
 
-    elements.agentManagementBody.innerHTML = `
+    dashboardElements.agentManagementBody.innerHTML = `
         <tr>
             <td colspan="4">
                 <div class="error-state">

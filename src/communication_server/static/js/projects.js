@@ -10,8 +10,8 @@ let projects = [];
 let selectedProjectId = null; // null = "All Agents"
 let sidebarCollapsed = false;
 
-// DOM elements
-const elements = {
+// DOM projectElements
+const projectElements = {
     projectSidebar: null,
     projectList: null,
     sidebarToggle: null,
@@ -24,19 +24,19 @@ const elements = {
 async function initProjectSidebar() {
     console.log('Initializing project sidebar...');
 
-    // Cache DOM elements
-    elements.projectSidebar = document.getElementById('projectSidebar');
-    elements.projectList = document.getElementById('projectList');
-    elements.sidebarToggle = document.getElementById('sidebarToggle');
-    elements.mainContent = document.querySelector('.main');
+    // Cache DOM projectElements
+    projectElements.projectSidebar = document.getElementById('projectSidebar');
+    projectElements.projectList = document.getElementById('projectList');
+    projectElements.sidebarToggle = document.getElementById('sidebarToggle');
+    projectElements.mainContent = document.querySelector('.main');
 
-    if (!elements.projectSidebar) {
+    if (!projectElements.projectSidebar) {
         console.warn('Project sidebar element not found');
         return;
     }
 
     // Set up toggle button
-    elements.sidebarToggle?.addEventListener('click', toggleSidebar);
+    projectElements.sidebarToggle?.addEventListener('click', toggleSidebar);
 
     // Load selected project from localStorage
     const savedProject = localStorage.getItem('selectedProjectId');
@@ -75,9 +75,9 @@ async function loadProjects() {
  * Render the project list
  */
 function renderProjectList() {
-    if (!elements.projectList) return;
+    if (!projectElements.projectList) return;
 
-    elements.projectList.innerHTML = projects.map(project => {
+    projectElements.projectList.innerHTML = projects.map(project => {
         const isSelected = (project.project_id === null && selectedProjectId === null) ||
                           project.project_id === selectedProjectId;
         const selectedClass = isSelected ? 'selected' : '';
@@ -136,8 +136,8 @@ async function selectProject(projectId) {
  */
 function toggleSidebar() {
     sidebarCollapsed = !sidebarCollapsed;
-    elements.projectSidebar.classList.toggle('collapsed', sidebarCollapsed);
-    elements.mainContent?.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+    projectElements.projectSidebar.classList.toggle('collapsed', sidebarCollapsed);
+    projectElements.mainContent?.classList.toggle('sidebar-collapsed', sidebarCollapsed);
 
     // Save state
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
