@@ -1,0 +1,11 @@
+# uv configuration file
+# See https://github.com/astral-sh/uv/blob/main/SETTINGS.md
+
+dev-dependencies = true
+python-version = "3.13"
+
+# Cache configuration
+cache-dir = ".uv-cache"
+
+# Workspace configuration
+workspace = true

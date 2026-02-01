@@ -1,0 +1,75 @@
+# MCP Broker Server - Multi-stage Dockerfile with uv
+# Build stage for dependency installation
+FROM python:3.13-slim AS builder
+
+# Set working directory
+WORKDIR /build
+
+# Set build environment
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.cargo/bin/uv /usr/local/bin/uv
+
+# Copy dependency files
+COPY pyproject.toml ./
+
+# Install Python dependencies using uv
+RUN uv pip install --system --prefix=/install -e .
+
+# Runtime stage
+FROM python:3.13-slim AS runtime
+
+# Set working directory
+WORKDIR /app
+
+# Set runtime environment
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python dependencies from builder
+COPY --from=builder /install /usr/local
+
+# Copy application code
+COPY pyproject.toml ./
+COPY src/mcp_broker/ ./src/mcp_broker/
+COPY src/agent_comm_core/ ./src/agent_comm_core/
+
+# Create non-root user for security
+RUN useradd -m -u 1000 -s /bin/bash mcpbroker && \
+    chown -R mcpbroker:mcpbroker /app
+
+# Switch to non-root user
+USER mcpbroker
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Default environment variables (can be overridden)
+ENV MCP_BROKER_HOST=0.0.0.0 \
+    MCP_BROKER_PORT=8000 \
+    MCP_BROKER_LOG_LEVEL=INFO \
+    MCP_BROKER_LOG_FORMAT=json \
+    MCP_BROKER_STORAGE=memory
+
+# Run the MCP broker server
+CMD ["python3", "-m", "uvicorn", "mcp_broker.main:app", "--host", "0.0.0.0", "--port", "8000"]

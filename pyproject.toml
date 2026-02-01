@@ -1,0 +1,183 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-broker-server"
+version = "1.0.0"
+description = "MCP Broker Server for inter-Claude Code communication"
+readme = "README.md"
+requires-python = ">=3.13"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "MoAI Development Team"}
+]
+keywords = ["mcp", "broker", "claude", "communication"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications",
+]
+
+dependencies = [
+    # MCP
+    "mcp>=1.0.0",
+
+    # API
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "jsonschema>=4.0.0",
+
+    # Database
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "aiosqlite>=0.20.0",
+
+    # Security
+    "python-jose[cryptography]>=3.3.0",
+    "passlib>=1.7.4",
+    "argon2-cffi>=23.0.0",
+    "cryptography>=41.0.0",
+
+    # Utilities
+    "semver>=3.0.0",
+    "python-dotenv>=1.0.0",
+    "python-dateutil>=2.8.0",
+    "httpx>=0.28.0",
+]
+
+[project.optional-dependencies]
+redis = [
+    "redis>=5.0.0",
+]
+
+[project.scripts]
+mcp-broker = "mcp_broker.main:main"
+agent-comm-server = "communication_server.main:main"
+
+[project.urls]
+Homepage = "https://github.com/moai/mcp-broker-server"
+Documentation = "https://github.com/moai/mcp-broker-server#readme"
+Repository = "https://github.com/moai/mcp-broker-server"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_comm_core", "src/communication_server", "src/mcp_broker"]
+artifacts = ["src/agent_comm_core/config/config.default.json"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"src/agent_comm_core/config/config.default.json" = "agent_comm_core/config/config.default.json"
+
+[tool.hatch.build]
+include = ["src/agent_comm_core/config/config.default.json"]
+packages = ["src/agent_comm_core", "src/communication_server", "src/mcp_broker"]
+
+# UV dependency groups (replaces deprecated tool.uv.dev-dependencies)
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
+    "httpx>=0.28.0",
+    "ruff>=0.8.0",
+    "mypy>=1.0.0",
+    "pytest-mock>=3.14.0",
+]
+
+# Ruff configuration (replaces black)
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by black)
+    "B008",   # do not perform function calls in argument defaults
+    "W191",   # indentation contains tabs
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mcp_broker", "communication_server", "agent_comm_core"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+strict_strict = true
+
+[[tool.mypy.overrides]]
+module = [
+    "mcp.*",
+    "jsonschema.*",
+    "semver.*",
+    "agent_comm_core.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/mcp_broker",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-fail-under=85",
+]
+
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "load: Load tests",
+    "slow: Slow running tests",
+]
+
+[tool.coverage.run]
+source = ["src/mcp_broker"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    "*/__main__.py",
+    "*/main.py",
+    "*/mcp/server.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\b:",
+    "@(abc\\.)?abstractmethod",
+]
+precision = 2

@@ -1,0 +1,99 @@
+{
+  "dashboard": {
+    "title": "AI Agent Communication",
+    "subtitle": "Real-time Status Board"
+  },
+  "stats": {
+    "totalAgents": "전체 에이전트",
+    "activeAgents": "활성화 에이전트",
+    "totalMessages": "전체 메시지",
+    "totalMeetings": "진행 중 회의",
+    "decisionsMade": "결정 사항"
+  },
+  "connection": {
+    "connected": "연결됨",
+    "connecting": "연결 중...",
+    "disconnected": "연결 해제",
+    "error": "연결 오류"
+  },
+  "status": {
+    "online": "온라인",
+    "active": "활성",
+    "idle": "대기",
+    "offline": "오프라인",
+    "error": "오류"
+  },
+  "registration": {
+    "title": "새 에이전트 등록",
+    "nicknameLabel": "닉네임",
+    "nicknamePlaceholder": "예: FrontendExpert",
+    "generateButton": "API 키 생성",
+    "generating": "생성 중...",
+    "successTitle": "에이전트가 등록되었습니다",
+    "apiKeyLabel": "API 키",
+    "copyButton": "복사",
+    "copiedButton": "복사됨",
+    "setupGuide": "설정 방법",
+    "setupStep1": "생성된 API 키를 MCP 설정에 추가",
+    "setupStep2": "<code>AGENT_NICKNAME</code>을 닉네임으로 설정",
+    "setupStep3": "Claude Code를 재시작",
+    "errorNicknameRequired": "에이전트의 닉네임을 입력해주세요",
+    "errorNicknameInvalid": "닉네임은 영문, 숫자, 하이픈, 언더스코어만 포함할 수 있습니다",
+    "errorGeneric": "에이전트 등록에 실패했습니다. 다시 시도해주세요."
+  },
+  "agentList": {
+    "title": "에이전트 목록",
+    "empty": "등록된 에이전트가 없습니다",
+    "status": "상태",
+    "nickname": "닉네임",
+    "displayId": "표시 ID",
+    "actions": "작업",
+    "deleteTooltip": "삭제",
+    "unknown": "알 수 없음",
+    "loadError": "에이전트 목록을 불러오지 못했습니다",
+    "retryButton": "다시 시도"
+  },
+  "agentStatus": {
+    "title": "에이전트 상태",
+    "empty": "등록된 에이전트가 없습니다",
+    "lastActivity": "마지막 활동",
+    "inMeeting": "회의 중"
+  },
+  "charts": {
+    "title": "활동 통계",
+    "hourly": "시간별",
+    "daily": "일별",
+    "top": "Top",
+    "hourlyActivity": "시간별 활동",
+    "dailyActivity": "일별 활동",
+    "topAgents": "상위 에이전트",
+    "messages": "메시지"
+  },
+  "timeline": {
+    "title": "최근 활동",
+    "empty": "최근 활동이 없습니다",
+    "loading": "로딩 중..."
+  },
+  "timelineEvents": {
+    "message": "메시지",
+    "status_change": "상태 변경",
+    "meeting": "회의",
+    "decision": "결정",
+    "register": "등록",
+    "unregister": "삭제"
+  },
+  "footer": {
+    "version": "AI Agent Communication System v1.0.0",
+    "connections": "연결됨"
+  },
+  "deleteConfirm": {
+    "title": "에이전트 삭제",
+    "message": "에이전트 \"{nickname}\"을(를) 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.",
+    "error": "에이전트 삭제 실패: {error}"
+  },
+  "common": {
+    "refresh": "새로고침",
+    "loading": "로딩 중...",
+    "error": "오류"
+  }
+}

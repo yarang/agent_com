@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="dashboard.title">AI Agent Communication System - Status Board</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Background gradient -->
+    <div class="bg-gradient"></div>
+    <div class="bg-pattern"></div>
+
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="3"/>
+                        <circle cx="16" cy="16" r="6" fill="currentColor"/>
+                        <circle cx="24" cy="10" r="4" fill="currentColor" opacity="0.6"/>
+                        <circle cx="8" cy="24" r="3" fill="currentColor" opacity="0.4"/>
+                    </svg>
+                </div>
+                <div class="header-title">
+                    <h1>AI Agent Communication</h1>
+                    <span>Real-time Status Board</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-badge" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text" data-i18n="connection.connecting">연결 중...</span>
+                </div>
+                <div class="language-toggle" id="languageToggle">
+                    <button class="btn-icon" id="languageBtn" title="Language / 언어">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        <span id="currentLang">KO</span>
+                    </button>
+                    <div class="language-dropdown" id="languageDropdown" style="display: none;">
+                        <button class="language-option" data-lang="ko">한국어</button>
+                        <button class="language-option" data-lang="en">English</button>
+                    </div>
+                </div>
+                <div class="time-display" id="currentTime">00:00:00</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Project Sidebar -->
+            <aside class="project-sidebar" id="projectSidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/>
+                            <path d="M9 3v18"/>
+                            <path d="M15 3v18"/>
+                        </svg>
+                        <span data-i18n="sidebar.projects">Projects</span>
+                    </div>
+                    <button class="btn-icon btn-sm" id="sidebarToggle" title="Collapse sidebar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="11 17 6 12 11 7"/>
+                            <polyline points="18 17 13 12 18 7"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="project-list" id="projectList">
+                    <!-- Project channels will be rendered here -->
+                    <div class="loading-state">
+                        <div class="spinner-small"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Stats Cards -->
+            <section class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalAgents">0</div>
+                        <div class="stat-label" data-i18n="stats.totalAgents">전체 에이전트</div>
+                    </div>
+                </div>
+
+                <div class="stat-card success">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="activeAgents">0</div>
+                        <div class="stat-label" data-i18n="stats.activeAgents">활성화 에이전트</div>
+                    </div>
+                </div>
+
+                <div class="stat-card info">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalMessages">0</div>
+                        <div class="stat-label" data-i18n="stats.totalMessages">전체 메시지</div>
+                    </div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="totalMeetings">0</div>
+                        <div class="stat-label" data-i18n="stats.totalMeetings">진행 중 회의</div>
+                    </div>
+                </div>
+
+                <div class="stat-card purple">
+                    <div class="stat-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="decisionsMade">0</div>
+                        <div class="stat-label" data-i18n="stats.decisionsMade">결정 사항</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Two Column Layout -->
+            <div class="content-grid">
+                <!-- Left Column -->
+                <div class="left-column">
+                    <!-- Register Agent -->
+                    <section class="card register-section">
+                        <div class="card-header">
+                            <h2 data-i18n="registration.title">새 에이전트 등록</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-group">
+                                <label for="agentNickname" data-i18n="registration.nicknameLabel">닉네임</label>
+                                <input
+                                    type="text"
+                                    id="agentNickname"
+                                    class="input-field"
+                                    data-i18n-placeholder="registration.nicknamePlaceholder"
+                                    placeholder="예: FrontendExpert"
+                                    maxlength="30"
+                                />
+                                <button class="btn btn-primary" id="registerAgentBtn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 5v14M5 12h14"/>
+                                    </svg>
+                                    <span data-i18n="registration.generateButton">API 키 생성</span>
+                                </button>
+                            </div>
+
+                            <div class="register-success" id="registrationResult" style="display: none;">
+                                <div class="success-icon">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                        <polyline points="22 4 12 14.01 9 11.01"/>
+                                    </svg>
+                                </div>
+                                <h3 data-i18n="registration.successTitle">에이전트가 등록되었습니다</h3>
+                                <div class="api-key-box">
+                                    <label data-i18n="registration.apiKeyLabel">API 키</label>
+                                    <div class="api-key-wrapper">
+                                        <code id="generatedApiKey">agent_***</code>
+                                        <button class="btn-copy" id="copyApiKeyBtn" data-i18n-title="registration.copyButton">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                            </svg>
+                                            <span class="copy-text" data-i18n="registration.copyButton">복사</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="setup-guide">
+                                    <h4 data-i18n="registration.setupGuide">설정 방법</h4>
+                                    <ol>
+                                        <li data-i18n="registration.setupStep1">생성된 API 키를 MCP 설정에 추가</li>
+                                        <li data-i18n="registration.setupStep2"><code>AGENT_NICKNAME</code>을 닉네임으로 설정</li>
+                                        <li data-i18n="registration.setupStep3">Claude Code를 재시작</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <div class="register-error" id="registrationError" style="display: none;">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <p id="registrationErrorText" data-i18n="registration.errorGeneric">등록 실패</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Agent List -->
+                    <section class="card agents-section">
+                        <div class="card-header">
+                            <h2 data-i18n="agentList.title">에이전트 목록</h2>
+                            <button class="btn-icon" id="refreshManagementBtn" data-i18n-title="common.refresh" title="새로고침">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table class="agents-table" id="agentManagementTable">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="agentList.status">상태</th>
+                                            <th data-i18n="agentList.nickname">닉네임</th>
+                                            <th data-i18n="agentList.displayId">표시 ID</th>
+                                            <th data-i18n="agentList.actions">작업</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="agentManagementBody">
+                                        <tr>
+                                            <td colspan="4">
+                                                <div class="empty-state">
+                                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="12" cy="12" r="10"/>
+                                                        <line x1="12" y1="8" x2="12" y2="12"/>
+                                                        <line x1="12" y1="16" x2="12" y2="16"/>
+                                                    </svg>
+                                                    <p data-i18n="agentList.empty">등록된 에이전트가 없습니다</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right Column -->
+                <div class="right-column">
+                    <!-- Agent Status Cards -->
+                    <section class="card status-section">
+                        <div class="card-header">
+                            <h2 data-i18n="agentStatus.title">에이전트 상태</h2>
+                            <button class="btn-icon" id="refreshBtn" data-i18n-title="common.refresh" title="새로고침">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="agents-grid" id="agentsGrid">
+                                <div class="loading-state">
+                                    <div class="spinner"></div>
+                                    <p data-i18n="common.loading">로딩 중...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Charts -->
+                    <section class="card charts-section">
+                        <div class="card-header">
+                            <h2 data-i18n="charts.title">활동 통계</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-tabs">
+                                <button class="chart-tab active" data-chart="hourly" data-i18n="charts.hourly">시간별</button>
+                                <button class="chart-tab" data-chart="daily" data-i18n="charts.daily">일별</button>
+                                <button class="chart-tab" data-chart="top" data-i18n="charts.top">Top</button>
+                            </div>
+                            <div class="chart-content">
+                                <canvas id="activityChart"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Messages -->
+                    <section class="card messages-section">
+                        <div class="card-header">
+                            <h2 data-i18n="messages.title">Messages</h2>
+                            <div class="messages-controls">
+                                <select id="messageProjectFilter" class="select-filter">
+                                    <option value="" data-i18n="messages.allProjects">All Projects</option>
+                                </select>
+                                <button class="btn-icon" id="refreshMessagesBtn" data-i18n-title="common.refresh" title="Refresh">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="23 4 23 10 17 10"></polyline>
+                                        <polyline points="1 20 1 14 7 14"></polyline>
+                                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="messages-list" id="messagesList">
+                                <div class="loading-state">
+                                    <div class="spinner"></div>
+                                    <p data-i18n="common.loading">로딩 중...</p>
+                                </div>
+                            </div>
+                            <div class="messages-loading" id="messagesLoading" style="display: none;">
+                                <div class="spinner-small"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Timeline -->
+                    <section class="card timeline-section">
+                        <div class="card-header">
+                            <h2 data-i18n="timeline.title">최근 활동</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="timeline" id="timelineContainer">
+                                <div class="loading-state">
+                                    <div class="spinner"></div>
+                                    <p data-i18n="common.loading">로딩 중...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            </div>
+        </main>
+
+        <!-- Message Detail Modal -->
+        <div class="modal" id="messageModal" style="display: none;">
+            <div class="modal-overlay" id="messageModalOverlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 data-i18n="messages.detailTitle">Message Details</h3>
+                    <button class="btn-close" id="closeMessageModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="message-detail-header">
+                        <div class="message-detail-participants">
+                            <span class="label" data-i18n="messages.from">From:</span>
+                            <span class="value" id="modalSender">@FrontendExpert</span>
+                        </div>
+                        <div class="message-detail-participants">
+                            <span class="label" data-i18n="messages.to">To:</span>
+                            <span class="value" id="modalRecipient">@BackendDev</span>
+                        </div>
+                    </div>
+                    <div class="message-detail-timestamp" id="modalTimestamp">
+                        2026-02-01 14:30:15 UTC
+                    </div>
+                    <div class="message-detail-content" id="modalContent">
+                        <!-- Full message content here -->
+                    </div>
+                    <div class="message-detail-meta" id="modalMeta">
+                        <span class="badge" id="modalProject">Project A</span>
+                        <span class="badge" id="modalType">direct</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p data-i18n="footer.version">AI Agent Communication System v1.0.0</p>
+            <span class="separator">•</span>
+            <span id="activeConnections">0</span> <span data-i18n="footer.connections">연결됨</span>
+        </footer>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/projects.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/messages.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

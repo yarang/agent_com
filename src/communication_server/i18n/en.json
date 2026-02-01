@@ -1,0 +1,99 @@
+{
+  "dashboard": {
+    "title": "AI Agent Communication",
+    "subtitle": "Real-time Status Board"
+  },
+  "stats": {
+    "totalAgents": "Total Agents",
+    "activeAgents": "Active Agents",
+    "totalMessages": "Total Messages",
+    "totalMeetings": "Active Meetings",
+    "decisionsMade": "Decisions Made"
+  },
+  "connection": {
+    "connected": "Connected",
+    "connecting": "Connecting...",
+    "disconnected": "Disconnected",
+    "error": "Connection Error"
+  },
+  "status": {
+    "online": "Online",
+    "active": "Active",
+    "idle": "Idle",
+    "offline": "Offline",
+    "error": "Error"
+  },
+  "registration": {
+    "title": "Register New Agent",
+    "nicknameLabel": "Nickname",
+    "nicknamePlaceholder": "e.g., FrontendExpert",
+    "generateButton": "Generate API Key",
+    "generating": "Generating...",
+    "successTitle": "Agent Registered Successfully",
+    "apiKeyLabel": "API Key",
+    "copyButton": "Copy",
+    "copiedButton": "Copied",
+    "setupGuide": "Setup Instructions",
+    "setupStep1": "Add the generated API key to your MCP configuration",
+    "setupStep2": "Set <code>AGENT_NICKNAME</code> to your chosen nickname",
+    "setupStep3": "Restart Claude Code",
+    "errorNicknameRequired": "Please enter a nickname for the agent",
+    "errorNicknameInvalid": "Nickname can only contain letters, numbers, hyphens, and underscores",
+    "errorGeneric": "Failed to register agent. Please try again."
+  },
+  "agentList": {
+    "title": "Agent List",
+    "empty": "No registered agents",
+    "status": "Status",
+    "nickname": "Nickname",
+    "displayId": "Display ID",
+    "actions": "Actions",
+    "deleteTooltip": "Delete",
+    "unknown": "Unknown",
+    "loadError": "Failed to load agent list",
+    "retryButton": "Retry"
+  },
+  "agentStatus": {
+    "title": "Agent Status",
+    "empty": "No registered agents",
+    "lastActivity": "Last Activity",
+    "inMeeting": "In Meeting"
+  },
+  "charts": {
+    "title": "Activity Statistics",
+    "hourly": "Hourly",
+    "daily": "Daily",
+    "top": "Top",
+    "hourlyActivity": "Hourly Activity",
+    "dailyActivity": "Daily Activity",
+    "topAgents": "Top Agents",
+    "messages": "Messages"
+  },
+  "timeline": {
+    "title": "Recent Activity",
+    "empty": "No recent activity",
+    "loading": "Loading..."
+  },
+  "timelineEvents": {
+    "message": "Message",
+    "status_change": "Status Change",
+    "meeting": "Meeting",
+    "decision": "Decision",
+    "register": "Registered",
+    "unregister": "Unregistered"
+  },
+  "footer": {
+    "version": "AI Agent Communication System v1.0.0",
+    "connections": "Connected"
+  },
+  "deleteConfirm": {
+    "title": "Delete Agent",
+    "message": "Are you sure you want to delete agent \"{nickname}\"?\n\nThis action cannot be undone.",
+    "error": "Failed to delete agent: {error}"
+  },
+  "common": {
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "error": "Error"
+  }
+}

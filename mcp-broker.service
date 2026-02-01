@@ -1,0 +1,54 @@
+# MCP Broker Server - systemd service file
+#
+# Installation:
+#   sudo cp mcp-broker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable mcp-broker
+#   sudo systemctl start mcp-broker
+#
+# Logs:
+#   journalctl -u mcp-broker -f
+
+[Unit]
+Description=MCP Broker Server for inter-Claude Code communication
+After=network-online.target
+Wants=network-online.target
+Documentation=https://github.com/moai/mcp-broker-server
+
+[Service]
+Type=simple
+User=mcpbroker
+Group=mcpbroker
+WorkingDirectory=/opt/mcp-broker
+
+# Environment file
+EnvironmentFile=/etc/mcp-broker/environment
+
+# Executables
+ExecStart=/opt/mcp-broker/venv/bin/python -m mcp_broker.main \
+    --host ${MCP_BROKER_HOST} \
+    --port ${MCP_BROKER_PORT}
+
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Restart policy
+Restart=always
+RestartSec=5
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/mcp-broker /var/lib/mcp-broker
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mcp-broker
+
+[Install]
+WantedBy=multi-user.target

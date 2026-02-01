@@ -1,0 +1,59 @@
+{
+  "_comment": "Production configuration example - Copy to config.json and update with production values",
+  "version": "1.0.0",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8443,
+    "ssl": {
+      "enabled": true,
+      "cert_path": "/etc/ssl/certs/agent-comm.pem",
+      "key_path": "/etc/ssl/private/agent-comm.key"
+    },
+    "cors": {
+      "origins": [
+        "https://dashboard.example.com",
+        "https://app.example.com"
+      ],
+      "allow_credentials": true
+    }
+  },
+  "database": {
+    "url": "postgresql+asyncpg://agent:secure_password@db:5432/agent_comm",
+    "pool_size": 20,
+    "max_overflow": 40
+  },
+  "authentication": {
+    "jwt": {
+      "secret_key": "CHANGE-THIS-TO-A-RANDOM-32-CHAR-KEY-IN-PRODUCTION",
+      "algorithm": "HS256",
+      "access_token_expire_minutes": 15,
+      "refresh_token_expire_days": 7
+    },
+    "api_token": {
+      "prefix": "agent_",
+      "secret": "CHANGE-THIS-TO-A-RANDOM-KEY-IN-PRODUCTION"
+    }
+  },
+  "security": {
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 60
+    },
+    "headers": {
+      "enabled": true
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json"
+  },
+  "agent": {
+    "nickname": "ProductionAgent",
+    "project_id": "production",
+    "capabilities": []
+  },
+  "communication_server": {
+    "url": "https://agent-comm.example.com",
+    "timeout": 30
+  }
+}

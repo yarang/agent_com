@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8001,
+    "ssl": {
+      "enabled": false,
+      "cert_path": "./certificates/cert.pem",
+      "key_path": "./certificates/key.pem"
+    },
+    "cors": {
+      "origins": [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "https://localhost:3000",
+        "https://localhost:8000"
+      ],
+      "allow_credentials": true
+    }
+  },
+  "database": {
+    "url": "postgresql+asyncpg://user:password@localhost/agent_comm",
+    "pool_size": 10,
+    "max_overflow": 20
+  },
+  "authentication": {
+    "jwt": {
+      "secret_key": "dev-secret-key-32-chars-long-min-for-local-testing",
+      "algorithm": "HS256",
+      "access_token_expire_minutes": 15,
+      "refresh_token_expire_days": 7
+    },
+    "api_token": {
+      "prefix": "agent_",
+      "secret": "dev-api-token-secret-32-chars-min-for-local-testing"
+    }
+  },
+  "security": {
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 60
+    },
+    "headers": {
+      "enabled": true
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json"
+  },
+  "agent": {
+    "nickname": "DevAgent",
+    "project_id": "agent-comm",
+    "capabilities": []
+  },
+  "communication_server": {
+    "url": "http://localhost:8001",
+    "timeout": 30
+  }
+}

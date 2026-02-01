@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "comment": "Copy this file to config.local.json for local development overrides",
+  "server": {
+    "port": 8001,
+    "host": "127.0.0.1"
+  },
+  "database": {
+    "url": "postgresql+asyncpg://user:password@localhost/agent_comm_dev"
+  },
+  "authentication": {
+    "jwt": {
+      "secret_key": "dev-local-secret-key-for-testing-only-32-chars"
+    },
+    "api_token": {
+      "value": "agent_agent-comm_dev_token"
+    }
+  },
+  "agent": {
+    "nickname": "DevAgent",
+    "project_id": "agent-comm-dev"
+  },
+  "logging": {
+    "level": "DEBUG",
+    "format": "text"
+  }
+}

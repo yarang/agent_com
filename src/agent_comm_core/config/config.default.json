@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8001,
+    "ssl": {
+      "enabled": false,
+      "cert_path": "./certificates/cert.pem",
+      "key_path": "./certificates/key.pem",
+      "provider": "self-signed",
+      "letsencrypt": {
+        "email": "",
+        "domain": "",
+        "staging": false
+      }
+    },
+    "cors": {
+      "origins": [
+        "http://localhost:3000",
+        "http://localhost:8000"
+      ],
+      "allow_credentials": true
+    }
+  },
+  "database": {
+    "url": "sqlite+aiosqlite:///./agent_comm.db",
+    "pool_size": 5,
+    "max_overflow": 10
+  },
+  "authentication": {
+    "jwt": {
+      "secret_key": "dev-secret-key-32-chars-long-min",
+      "algorithm": "HS256",
+      "access_token_expire_minutes": 15,
+      "refresh_token_expire_days": 7
+    },
+    "api_token": {
+      "prefix": "agent_",
+      "secret": "dev-api-token-secret-32-chars-min"
+    }
+  },
+  "security": {
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 60
+    },
+    "headers": {
+      "enabled": true
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json"
+  },
+  "agent": {
+    "nickname": "AnonymousAgent",
+    "project_id": "agent-comm",
+    "capabilities": []
+  },
+  "communication_server": {
+    "url": "http://localhost:8001",
+    "timeout": 30
+  }
+}

@@ -1,0 +1,163 @@
+# AI Agent Communication System - Docker Compose Configuration
+# Multi-service architecture with PostgreSQL, Redis, Communication Server, and MCP Broker
+
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: agent-comm-postgres
+    environment:
+      POSTGRES_DB: agent_comm
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agent_comm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - agent-comm-network
+
+  # Redis Cache (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: agent-comm-redis
+    command: redis-server --appendonly yes --requirepass redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - agent-comm-network
+    profiles:
+      - redis  # Only start with --profile redis
+
+  # Communication Server
+  communication-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.communication
+    container_name: agent-comm-server
+    ports:
+      - "${COMMUNICATION_SERVER_PORT:-8001}:8001"
+      - "${COMMUNICATION_SERVER_SSL_PORT:-8443}:8443"
+    volumes:
+      # Mount SSL certificates if SSL is enabled
+      - ./certificates:/app/certificates:ro
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://agent:password@postgres:5432/agent_comm
+      - PORT=8001
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000,https://localhost:3000,https://localhost:8000}
+      # SSL/TLS Configuration
+      - SSL_ENABLED=${SSL_ENABLED:-false}
+      - SSL_CERT_PATH=${SSL_CERT_PATH:-./certificates/cert.pem}
+      - SSL_KEY_PATH=${SSL_KEY_PATH:-./certificates/key.pem}
+      - SSL_PORT=${SSL_PORT:-8443}
+      - HTTP_PORT=${HTTP_PORT:-8001}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - agent-comm-network
+
+  # MCP Broker Server
+  mcp-broker:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    container_name: agent-mcp-broker
+    ports:
+      - "${MCP_BROKER_PORT:-8000}:8000"
+    environment:
+      - MCP_BROKER_HOST=0.0.0.0
+      - MCP_BROKER_PORT=8000
+      - MCP_BROKER_LOG_LEVEL=${MCP_BROKER_LOG_LEVEL:-INFO}
+      - MCP_BROKER_LOG_FORMAT=${MCP_BROKER_LOG_FORMAT:-json}
+      - MCP_BROKER_STORAGE=${MCP_BROKER_STORAGE:-memory}
+      - MCP_BROKER_QUEUE_CAPACITY=${MCP_BROKER_QUEUE_CAPACITY:-100}
+      - MCP_BROKER_HEARTBEAT_INTERVAL=${MCP_BROKER_HEARTBEAT_INTERVAL:-30}
+      - MCP_BROKER_STALE_THRESHOLD=${MCP_BROKER_STALE_THRESHOLD:-30}
+      - MCP_BROKER_DISCONNECT_THRESHOLD=${MCP_BROKER_DISCONNECT_THRESHOLD:-60}
+      - MCP_BROKER_ENABLE_AUTH=${MCP_BROKER_ENABLE_AUTH:-true}
+      - MCP_BROKER_AUTH_SECRET=${MCP_BROKER_AUTH_SECRET:-change-me-in-production}
+      - MCP_BROKER_CORS_ORIGINS=${MCP_BROKER_CORS_ORIGINS:-*}
+      - COMMUNICATION_SERVER_URL=http://communication-server:8001
+    depends_on:
+      communication-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - agent-comm-network
+
+  # Certbot for Let's Encrypt certificate management (production only)
+  certbot:
+    image: certbot/certbot:latest
+    container_name: agent-comm-certbot
+    volumes:
+      - ./certificates:/etc/letsencrypt/live/${DOMAIN:-example.com}
+      - certbot-webroot:/var/www/html
+    entrypoint: ["/bin/sh", "-c", "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;"]
+    networks:
+      - agent-comm-network
+    profiles:
+      - ssl
+
+  # Nginx reverse proxy with SSL termination (production only)
+  nginx:
+    image: nginx:alpine
+    container_name: agent-comm-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certificates:/etc/letsencrypt/live/${DOMAIN:-example.com}:ro
+      - certbot-webroot:/var/www/html:ro
+    depends_on:
+      - communication-server
+    networks:
+      - agent-comm-network
+    profiles:
+      - ssl
+
+networks:
+  agent-comm-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  certbot-webroot:
+    driver: local
