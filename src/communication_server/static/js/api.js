@@ -813,3 +813,40 @@ if (typeof module !== 'undefined' && module.exports) {
         fetchMessageDetail,
     };
 }
+
+// Browser environment: attach to window object
+if (typeof window !== 'undefined') {
+    window.fetchAgents = fetchAgents;
+    window.fetchAgentInfo = fetchAgentInfo;
+    window.fetchStatistics = fetchStatistics;
+    window.fetchActivity = fetchActivity;
+    window.fetchTimeline = fetchTimeline;
+    window.updateAgentStatus = updateAgentStatus;
+    window.registerAgent = registerAgent;
+    window.unregisterAgent = unregisterAgent;
+    window.sendHeartbeat = sendHeartbeat;
+    window.connectWebSocket = connectWebSocket;
+    window.disconnectWebSocket = disconnectWebSocket;
+    window.sendWebSocketMessage = sendWebSocketMessage;
+    window.pingWebSocket = pingWebSocket;
+    window.onWebSocketMessage = onWebSocketMessage;
+    window.offWebSocketMessage = offWebSocketMessage;
+    window.formatTimestamp = formatTimestamp;
+    window.formatTimelineTimestamp = formatTimelineTimestamp;
+    window.formatFullDate = formatFullDate;
+    window.login = login;
+    window.refreshToken = refreshToken;
+    window.createAgentToken = createAgentToken;
+    window.fetchRegisteredAgents = fetchRegisteredAgents;
+    window.deleteAgent = deleteAgent;
+    window.copyToClipboard = copyToClipboard;
+    window.setAuthToken = setAuthToken;
+    window.getWsUrlWithToken = getWsUrlWithToken;
+    window.getConnectionInfo = getConnectionInfo;
+    window.fetchLanguages = fetchLanguages;
+    window.fetchTranslations = fetchTranslations;
+    window.fetchProjects = fetchProjects;
+    window.fetchProjectAgents = fetchProjectAgents;
+    window.fetchMessages = fetchMessages;
+    window.fetchMessageDetail = fetchMessageDetail;
+}
