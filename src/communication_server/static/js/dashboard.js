@@ -379,7 +379,7 @@ function renderAgents() {
  * Create an agent card HTML
  */
 function createAgentCard(agent) {
-    const { display_id, nickname, status, capabilities, last_seen, current_meeting } = agent;
+    const { agent_id, nickname, status, capabilities, last_seen, current_meeting } = agent;
 
     const statusClass = status.toLowerCase();
     const statusIcons = {
@@ -414,10 +414,10 @@ function createAgentCard(agent) {
     const lastActivityLabel = t('agentStatus.lastActivity');
 
     return `
-        <div class="agent-card" data-agent-id="${escapeHtml(display_id)}">
+        <div class="agent-card" data-agent-id="${escapeHtml(agent_id)}">
             <div class="agent-card-header">
                 <div>
-                    <div class="agent-display-id">${escapeHtml(display_id)}</div>
+                    <div class="agent-display-id">${escapeHtml(agent_id)}</div>
                     <div class="agent-nickname">${escapeHtml(nickname)}</div>
                 </div>
                 <div class="agent-status">
@@ -529,7 +529,7 @@ function createTopAgentsChart(ctx, data) {
         .sort((a, b) => b.message_count - a.message_count)
         .slice(0, 10);
 
-    const labels = sortedData.map(item => item.display_id || item.agent_id || t('agentList.unknown'));
+    const labels = sortedData.map(item => item.agent_id || item.display_id || t('agentList.unknown'));
     const values = sortedData.map(item => item.message_count || 0);
     const messagesLabel = t('charts.messages');
 
@@ -721,7 +721,7 @@ function handleWebSocketMessage(data) {
 function handleAgentStatusChange(data) {
     const { agent_id, old_status, new_status } = data;
 
-    const agentIndex = agents.findIndex(a => a.agent_id === agent_id || a.display_id === agent_id);
+    const agentIndex = agents.findIndex(a => a.agent_id === agent_id);
     if (agentIndex !== -1) {
         agents[agentIndex].status = new_status;
         renderAgents();
@@ -976,14 +976,14 @@ function renderAgentManagementTable() {
  * Create agent management table row
  */
 function createAgentManagementRow(agent) {
-    const { id, nickname, display_id, status } = agent;
+    const { agent_id, nickname, status } = agent;
     const statusClass = status?.toLowerCase() || 'offline';
 
     // Use i18n for status labels
     const statusLabel = t(`status.${statusClass}`) || t('agentList.unknown');
 
     return `
-        <tr data-agent-id="${escapeHtml(id)}">
+        <tr data-agent-id="${escapeHtml(agent_id)}">
             <td>
                 <span class="status-badge ${statusClass}">
                     <span class="status-dot"></span>
@@ -991,9 +991,9 @@ function createAgentManagementRow(agent) {
                 </span>
             </td>
             <td>${escapeHtml(nickname)}</td>
-            <td><code>${escapeHtml(display_id || '-')}</code></td>
+            <td><code>${escapeHtml(agent_id)}</code></td>
             <td>
-                <button class="btn-icon btn-delete" onclick="handleDeleteAgent('${escapeHtml(id)}', '${escapeHtml(nickname)}')" data-i18n-title="agentList.deleteTooltip" title="${t('agentList.deleteTooltip')}">
+                <button class="btn-icon btn-delete" onclick="handleDeleteAgent('${escapeHtml(agent_id)}', '${escapeHtml(nickname)}')" data-i18n-title="agentList.deleteTooltip" title="${t('agentList.deleteTooltip')}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
