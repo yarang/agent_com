@@ -103,14 +103,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # Enables browser XSS filter
         "X-XSS-Protection": "1; mode=block",
         # Content Security Policy (restricts resource sources)
-        # Relaxed for development with Chart.js CDN and WebSocket support
+        # Relaxed for development - allows same-origin across ports
         "Content-Security-Policy": (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "img-src 'self' data: https:; "
             "font-src 'self' data: https://cdn.jsdelivr.net; "
-            "connect-src 'self' ws: wss: https://cdn.jsdelivr.net; "
+            "connect-src 'self' * ws: wss: https://cdn.jsdelivr.net; "
             "frame-ancestors 'none';"
         ),
         # Referrer policy
