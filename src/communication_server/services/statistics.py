@@ -7,7 +7,6 @@ meetings, and decisions.
 
 from collections import Counter
 from datetime import datetime, timedelta
-from typing import Optional
 
 from agent_comm_core.models.status import (
     ActivityPatterns,
@@ -135,7 +134,7 @@ class StatisticsService:
             pending_decisions=pending_decisions,
         )
 
-    async def get_activity_patterns(self, agent_full_id: Optional[str] = None) -> ActivityPatterns:
+    async def get_activity_patterns(self, agent_full_id: str | None = None) -> ActivityPatterns:
         """
         Get activity patterns by hour and day.
 
@@ -296,25 +295,22 @@ class StatisticsService:
         }
 
 
-# Global service instance
-_statistics_service: Optional[StatisticsService] = None
-
-
 def get_statistics_service(
     communication_repo: CommunicationRepository,
     meeting_repo: MeetingRepository,
 ) -> StatisticsService:
     """
-    Get or create the statistics service instance.
+    Create a new statistics service instance.
+
+    Note: A new instance is created each time to avoid SQLAlchemy
+    async session concurrency issues. Repositories are request-scoped
+    and should not be shared across requests.
 
     Args:
         communication_repo: Repository for communication data
         meeting_repo: Repository for meeting data
 
     Returns:
-        The StatisticsService instance
+        A new StatisticsService instance
     """
-    global _statistics_service
-    if _statistics_service is None:
-        _statistics_service = StatisticsService(communication_repo, meeting_repo)
-    return _statistics_service
+    return StatisticsService(communication_repo, meeting_repo)

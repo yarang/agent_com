@@ -200,6 +200,30 @@ class I18n {
 // Create global i18n instance
 const i18n = new I18n();
 
+// Initialization promise
+let i18nReady = false;
+const i18nInitPromise = i18n.init().then(() => {
+    i18nReady = true;
+});
+
+/**
+ * Wait for i18n to be initialized
+ * @returns {Promise<void>}
+ */
+function waitForI18n() {
+    return i18nInitPromise;
+}
+
+/**
+ * Global translation function
+ * @param {string} key - Translation key
+ * @param {Object} params - Optional parameters
+ * @returns {string} Translated string
+ */
+function t(key, params = {}) {
+    return i18n.t(key, params);
+}
+
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => i18n.init());
