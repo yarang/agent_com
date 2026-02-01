@@ -144,17 +144,6 @@ async function fetchProjectAgents(projectId) {
         throw error;
     }
 }
-    try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/status/agents/${encodeURIComponent(displayId)}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching agent info:', error);
-        throw error;
-    }
-}
 
 /**
  * Fetch system-wide statistics
@@ -613,7 +602,7 @@ async function createAgentToken(nickname) {
  */
 async function fetchRegisteredAgents() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/agents`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/status/agents`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -631,7 +620,7 @@ async function fetchRegisteredAgents() {
  */
 async function deleteAgent(agentId) {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/agents/${agentId}`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/status/agents/${agentId}`, {
             method: 'DELETE',
         });
 
