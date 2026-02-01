@@ -1,6 +1,23 @@
 {
   "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/.mcp.schema.json",
   "mcpServers": {
+    "agent-comm": {
+      "$comment": "AI Agent Communication System MCP Broker - Claude Code 간 통신 지원",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/yarang/works/agent_dev/agent_com",
+        "run",
+        "mcp-broker"
+      ],
+      "env": {
+        "AGENT_TOKEN": "${agent_default_test_uLebAxxQ2aEvzN8KXJC2iWrmXK1WoysL4d-uGL2YYV4}",
+        "AGENT_NICKNAME": "local-agent",
+        "AGENT_PROJECT_ID": "agent-comm",
+        "COMMUNICATION_SERVER_URL": "https://oci-ajou-ec2.fcoinfup.com:8000",
+        "PYTHONUNBUFFERED": "1"
+      }
+    },
     "context7": {
       "$comment": "Using shell wrapper to load PATH (fixes npx bash function issue). Use .mcp.windows.json for Windows.",
       "command": "${SHELL:-/bin/bash}",

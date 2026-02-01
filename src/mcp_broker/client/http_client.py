@@ -5,7 +5,6 @@ This module provides an async HTTP client for communicating with
 the Communication Server REST API.
 """
 
-import logging
 from typing import Any
 from uuid import UUID
 
@@ -15,7 +14,6 @@ from pydantic import BaseModel
 from agent_comm_core.models.communication import Communication, CommunicationCreate
 from agent_comm_core.models.decision import Decision
 from agent_comm_core.models.meeting import Meeting, MeetingCreate
-
 from mcp_broker.core.config import get_config
 from mcp_broker.core.logging import get_logger
 
@@ -70,7 +68,7 @@ class HTTPClient:
 
         Args:
             base_url: Base URL of the Communication Server
-                      (defaults to COMMUNICATION_SERVER_URL env var or http://localhost:8001)
+                      (defaults to COMMUNICATION_SERVER_URL env var or http://localhost:8000)
             agent_token: API token for authentication (defaults to AGENT_TOKEN env var)
             agent_nickname: Agent's display nickname (defaults to AGENT_NICKNAME env var)
             timeout: Request timeout in seconds
@@ -81,7 +79,7 @@ class HTTPClient:
 
         # Get base URL from parameter, env var, or default
         if base_url is None:
-            base_url = os.getenv("COMMUNICATION_SERVER_URL", "http://localhost:8001")
+            base_url = os.getenv("COMMUNICATION_SERVER_URL", "http://localhost:8000")
 
         # Get agent token from parameter, env var, or config
         if not agent_token:
@@ -100,7 +98,7 @@ class HTTPClient:
         self._client: httpx.AsyncClient | None = None
 
         logger.info(
-            f"HTTPClient initialized",
+            "HTTPClient initialized",
             extra={
                 "context": {
                     "base_url": self.base_url,

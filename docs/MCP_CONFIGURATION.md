@@ -17,7 +17,7 @@ This guide explains how to configure the MCP Broker with environment variables f
 | `AGENT_NICKNAME` | Agent's display nickname | `AnonymousAgent` | `FrontendExpert` |
 | `AGENT_TOKEN` | API token for authentication | `""` (empty) | `agent_agent-comm_a3f9...` |
 | `AGENT_PROJECT_ID` | Project identifier | `agent-comm` | `my-project` |
-| `COMMUNICATION_SERVER_URL` | Communication Server URL | `http://localhost:8001` | `http://localhost:8001` |
+| `COMMUNICATION_SERVER_URL` | Communication Server URL | `http://localhost:8000` | `http://localhost:8000` | `https://oci-ajou-ec2.fcoinfup.com:8000` |
 
 ### Server Configuration
 
@@ -67,7 +67,7 @@ python -m mcp_broker
 set AGENT_NICKNAME=FrontendExpert
 set AGENT_TOKEN=agent_agent-comm_a3f9...
 set AGENT_PROJECT_ID=agent-comm
-set COMMUNICATION_SERVER_URL=http://localhost:8001
+set COMMUNICATION_SERVER_URL=http://localhost:8000
 
 # Run the broker
 python -m mcp_broker
@@ -82,7 +82,7 @@ Create a `.env` file in your project root:
 AGENT_NICKNAME=FrontendExpert
 AGENT_TOKEN=agent_agent-comm_a3f9...
 AGENT_PROJECT_ID=agent-comm
-COMMUNICATION_SERVER_URL=http://localhost:8001
+COMMUNICATION_SERVER_URL=http://localhost:8000
 
 # Optional: Server Configuration
 MCP_BROKER_HOST=0.0.0.0
@@ -127,7 +127,7 @@ services:
       - AGENT_NICKNAME=FrontendExpert
       - AGENT_TOKEN=agent_agent-comm_a3f9...
       - AGENT_PROJECT_ID=agent-comm
-      - COMMUNICATION_SERVER_URL=http://communication-server:8001
+      - COMMUNICATION_SERVER_URL=http://communication-server:8000
     ports:
       - "8000:8000"
     depends_on:
@@ -170,7 +170,7 @@ INFO - Port: 8000
 INFO - Storage: memory
 INFO - Agent nickname: FrontendExpert
 INFO - Agent project ID: agent-comm
-INFO - Communication Server: http://localhost:8001
+INFO - Communication Server: http://localhost:8000
 INFO - Agent token: configured (hidden for security)
 ```
 
@@ -235,20 +235,20 @@ CommunicationServerAPIError: Request failed: Connection refused
 AGENT_NICKNAME=DevAgent
 AGENT_TOKEN=agent_agent-comm_dev_a1b2...
 AGENT_PROJECT_ID=agent-comm-dev
-COMMUNICATION_SERVER_URL=http://localhost:8001
+COMMUNICATION_SERVER_URL=http://localhost:8000
 MCP_BROKER_LOG_LEVEL=DEBUG
 ```
 
 ### Production Setup
 
 ```bash
-# Production environment
+# Production environment with remote server
 AGENT_NICKNAME=ProductionAgent
 AGENT_TOKEN=agent_agent-comm_prod_x9y8...
 AGENT_PROJECT_ID=agent-comm-prod
-COMMUNICATION_SERVER_URL=https://comm.example.com
+COMMUNICATION_SERVER_URL=https://oci-ajou-ec2.fcoinfup.com:8000
 MCP_BROKER_LOG_LEVEL=INFO
-MCP_BROKER_CORS_ORIGINS=https://app.example.com
+MCP_BROKER_CORS_ORIGINS=https://oci-ajou-ec2.fcoinfup.com
 ```
 
 ## Next Steps

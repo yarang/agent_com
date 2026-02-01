@@ -18,7 +18,7 @@ def get_default_config() -> dict:
         "version": "1.0.0",
         "server": {
             "host": "0.0.0.0",
-            "port": 8001,
+            "port": 8000,
             "ssl": {
                 "enabled": False,
                 "cert_path": "./certificates/cert.pem",
@@ -67,7 +67,7 @@ def get_default_config() -> dict:
             "capabilities": [],
         },
         "communication_server": {
-            "url": "http://localhost:8001",
+            "url": "http://localhost:8000",
             "timeout": 30,
         },
     }

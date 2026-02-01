@@ -6,37 +6,35 @@
     "ssl": {
       "enabled": false,
       "cert_path": "./certificates/cert.pem",
-      "key_path": "./certificates/key.pem",
-      "provider": "self-signed",
-      "letsencrypt": {
-        "email": "",
-        "domain": "",
-        "staging": false
-      }
+      "key_path": "./certificates/key.pem"
     },
     "cors": {
       "origins": [
+        "https://oci-ajou-ec2.fcoinfup.com",
+        "http://oci-ajou-ec2.fcoinfup.com",
+        "http://oci-ajou-ec2.fcoinfup.com:8000",
+        "https://oci-ajou-ec2.fcoinfup.com:8000",
         "http://localhost:3000",
-        "http://localhost:8000"
+        "https://localhost:3000"
       ],
       "allow_credentials": true
     }
   },
   "database": {
-    "url": "sqlite+aiosqlite:///./agent_comm.db",
-    "pool_size": 5,
-    "max_overflow": 10
+    "url": "postgresql+asyncpg://agent:agent_password@localhost:5432/agent_comm",
+    "pool_size": 10,
+    "max_overflow": 20
   },
   "authentication": {
     "jwt": {
-      "secret_key": "dev-secret-key-32-chars-long-min",
+      "secret_key": "CHANGE_ME_IN_PRODUCTION_USE_32_CHAR_MIN",
       "algorithm": "HS256",
       "access_token_expire_minutes": 15,
       "refresh_token_expire_days": 7
     },
     "api_token": {
       "prefix": "agent_",
-      "secret": "dev-api-token-secret-32-chars-min"
+      "secret": "CHANGE_ME_IN_PRODUCTION_USE_32_CHAR_MIN"
     }
   },
   "security": {
@@ -53,12 +51,12 @@
     "format": "json"
   },
   "agent": {
-    "nickname": "AnonymousAgent",
-    "project_id": "agent-comm",
+    "nickname": "OCI-Agent",
+    "project_id": "agent-comm-oci",
     "capabilities": []
   },
   "communication_server": {
-    "url": "http://localhost:8000",
+    "url": "http://oci-ajou-ec2.fcoinfup.com:8000",
     "timeout": 30
   }
 }
