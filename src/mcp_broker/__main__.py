@@ -9,8 +9,8 @@ import asyncio
 import sys
 from typing import Any
 
-from mcp_broker.core.config import get_config, BrokerConfig
-from mcp_broker.core.logging import setup_logging, get_logger
+from mcp_broker.core.config import get_config
+from mcp_broker.core.logging import get_logger, setup_logging
 
 
 def parse_args() -> argparse.Namespace:
@@ -154,8 +154,8 @@ def args_to_config_overrides(args: argparse.Namespace) -> dict[str, Any]:
     return overrides
 
 
-async def main() -> int:
-    """Main entry point for the MCP Broker Server.
+async def _main_async() -> int:
+    """Async main entry point for the MCP Broker Server.
 
     Returns:
         Exit code (0 for success, non-zero for error)
@@ -222,5 +222,20 @@ async def main() -> int:
         return 1
 
 
+# Backward compatible alias
+main = _main_async
+
+
 if __name__ == "__main__":
     sys.exit(asyncio.run(main()))
+
+
+# Synchronous entry point for uv scripts
+def run_sync():
+    """Synchronous entry point for package scripts."""
+    sys.exit(asyncio.run(_main_async()))
+
+
+if __name__ != "__main__":
+    # When imported as module, export the sync runner
+    main = run_sync  # type: ignore

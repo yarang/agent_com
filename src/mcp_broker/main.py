@@ -4,21 +4,17 @@ FastAPI application entry point for MCP Broker Server.
 Provides HTTP endpoints for health checks and testing.
 """
 
-import asyncio
 from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from uuid import UUID
 
-from mcp_broker.core.config import get_config, BrokerConfig
-from mcp_broker.core.logging import setup_logging, get_logger
+from mcp_broker.core.config import BrokerConfig, get_config
+from mcp_broker.core.logging import get_logger, setup_logging
 from mcp_broker.core.security import SecurityMiddleware
 from mcp_broker.mcp.server import MCPServer
-
 
 # Global server instance
 _broker_server: MCPServer | None = None
@@ -87,14 +83,16 @@ _config = get_config()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_config.cors_origins,
+    allow_origins=_config.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
 # Add Security middleware if authentication is enabled
-if _config.enable_auth:
+import os
+
+if os.getenv("MCP_BROKER_ENABLE_AUTH", "false").lower() == "true":
     app.add_middleware(SecurityMiddleware)
 
 

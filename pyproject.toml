@@ -55,7 +55,7 @@ redis = [
 ]
 
 [project.scripts]
-mcp-broker = "mcp_broker.main:main"
+mcp-broker = "mcp_broker.__main__:run_sync"
 agent-comm-server = "communication_server.main:main"
 
 [project.urls]

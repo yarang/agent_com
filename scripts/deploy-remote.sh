@@ -13,9 +13,9 @@ NC='\033[0m' # No Color
 
 # Configuration
 SERVER_USER="ubuntu"
-SERVER_HOST="oci-ajou-ec2.fcoinfup.com"
+SERVER_HOST="oci-ajou-ec2"
 SERVER_PORT="22"
-APP_DIR="/home/ubuntu/agent_com"
+APP_DIR="/home/ubuntu/works/agent_com"
 SERVICE_NAME="agent-comm"
 SERVICE_PORT=8000
 
