@@ -146,11 +146,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Show success state
-                showSuccessState('Login successful! Redirecting to dashboard...');
+                showSuccessState('Login successful! Redirecting...');
 
-                // Redirect to dashboard after delay
+                // Get return URL or default to dashboard
+                const returnUrl = sessionStorage.getItem('auth_return_url') || '/index.html';
+
+                // Clear return URL
+                sessionStorage.removeItem('auth_return_url');
+
+                // Redirect after delay
                 setTimeout(() => {
-                    window.location.href = '/index.html';
+                    window.location.href = returnUrl;
                 }, 1000);
             } else {
                 showError(loginError, loginErrorText, 'Invalid response from server. Please try again.');

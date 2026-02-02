@@ -63,11 +63,32 @@ async function fetchWithAuth(url, options = {}) {
         headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    return fetch(url, {
+    const response = await fetch(url, {
         ...options,
         headers,
         credentials: 'include', // Include cookies for CORS
     });
+
+    // Handle 401 responses - redirect to login
+    if (response.status === 401) {
+        handleUnauthorizedResponse();
+    }
+
+    return response;
+}
+
+/**
+ * Handle unauthorized responses (401)
+ * Redirects unauthenticated users to login page with return URL
+ */
+function handleUnauthorizedResponse() {
+    // Check if not already on login page
+    if (!window.location.pathname.includes('login.html')) {
+        // Store return URL and redirect
+        const returnUrl = window.location.pathname + window.location.search + window.location.hash;
+        sessionStorage.setItem('auth_return_url', returnUrl);
+        window.location.href = '/login.html';
+    }
 }
 
 /**
@@ -1004,6 +1025,9 @@ if (typeof module !== 'undefined' && module.exports) {
         unassignAgentFromProject,
         sendProjectMessage,
         getProjectMessages,
+        // Auth redirect
+        fetchWithAuth,
+        handleUnauthorizedResponse,
     };
 }
 
@@ -1488,4 +1512,7 @@ if (typeof window !== 'undefined') {
     window.updateRoomMediator = updateRoomMediator;
     window.removeMediatorFromRoom = removeMediatorFromRoom;
     window.triggerMediator = triggerMediator;
+    // Auth redirect
+    window.fetchWithAuth = fetchWithAuth;
+    window.handleUnauthorizedResponse = handleUnauthorizedResponse;
 }

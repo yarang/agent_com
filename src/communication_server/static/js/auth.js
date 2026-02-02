@@ -20,6 +20,7 @@ const STORAGE_KEYS = {
     REFRESH_TOKEN: 'refresh_token',
     USER: 'user',
     REMEMBER_ME: 'remember_me',
+    RETURN_URL: 'auth_return_url',
 };
 
 // Token refresh interval (5 minutes before expiry)
@@ -426,9 +427,82 @@ class AuthError extends Error {
 // Create singleton auth instance
 const auth = new AuthManager();
 
+// ==================== Redirect Functions ====================
+
+/**
+ * Check if current page is exempt from authentication redirect
+ * Prevents infinite redirect loops on login/signup pages
+ * @returns {boolean} True if current page is exempt from redirect
+ */
+function isExemptPage() {
+    const exemptPaths = ['/login.html', '/login', '/signup.html', '/signup'];
+    const currentPath = window.location.pathname;
+    return exemptPaths.some(path => currentPath.includes(path));
+}
+
+/**
+ * Store the current URL for post-login redirect
+ * Stores full path including query parameters and hash fragments
+ */
+function storeReturnUrl() {
+    const returnUrl = window.location.pathname + window.location.search + window.location.hash;
+    sessionStorage.setItem(STORAGE_KEYS.RETURN_URL, returnUrl);
+}
+
+/**
+ * Get and clear the stored return URL
+ * Returns the stored URL or default dashboard if invalid/missing
+ * @returns {string} Return URL for post-login redirect
+ */
+function getReturnUrl() {
+    let returnUrl = sessionStorage.getItem(STORAGE_KEYS.RETURN_URL);
+    sessionStorage.removeItem(STORAGE_KEYS.RETURN_URL);
+
+    // Validate return URL - prevent redirecting to login/signup or external domains
+    if (!returnUrl) {
+        return '/index.html';
+    }
+
+    // Check if return URL points to login or signup pages
+    const exemptPatterns = ['/login', '/signup'];
+    const isExempt = exemptPatterns.some(pattern => returnUrl.includes(pattern));
+
+    if (isExempt) {
+        return '/index.html';
+    }
+
+    // Ensure return URL is relative (prevent open redirect vulnerabilities)
+    if (returnUrl.startsWith('http://') || returnUrl.startsWith('https://')) {
+        return '/index.html';
+    }
+
+    return returnUrl || '/index.html';
+}
+
+/**
+ * Redirect unauthenticated user to login page
+ * Stores current URL before redirect for post-login return
+ */
+function redirectToLogin() {
+    if (isExemptPage()) {
+        return; // Don't redirect if already on login page
+    }
+    storeReturnUrl();
+    window.location.href = '/login.html';
+}
+
+// ==================== Auth Initialization ====================
+
 // Initialize auth on page load
 function initAuth() {
     auth.loadFromStorage();
+
+    // Check if user is authenticated
+    if (!auth.isAuthenticated() && !isExemptPage()) {
+        // Redirect to login for protected pages
+        redirectToLogin();
+        return;
+    }
 
     if (auth.isAuthenticated()) {
         auth.startTokenRefresh();
@@ -460,6 +534,10 @@ if (typeof module !== 'undefined' && module.exports) {
         initAuth,
         handleAuthError,
         STORAGE_KEYS,
+        isExemptPage,
+        storeReturnUrl,
+        getReturnUrl,
+        redirectToLogin,
     };
 }
 
@@ -470,6 +548,10 @@ if (typeof window !== 'undefined') {
     window.auth = auth;
     window.initAuth = initAuth;
     window.handleAuthError = handleAuthError;
+    window.isExemptPage = isExemptPage;
+    window.storeReturnUrl = storeReturnUrl;
+    window.getReturnUrl = getReturnUrl;
+    window.redirectToLogin = redirectToLogin;
 }
 
 // Initialize auth when DOM is ready
