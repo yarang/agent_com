@@ -152,17 +152,17 @@ async def refresh_token(
             token_type="bearer",
             expires_in=15 * 60,
         )
-    except Exception:
+    except Exception as err:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
-        )
+        ) from err
 
 
 @router.post("/logout")
 async def logout(
     refresh_token: RefreshTokenRequest,
-    current_user: User = Depends(get_current_user),
+    _current_user: User = Depends(get_current_user),
     auth_service: AuthService = Depends(get_auth_service),
 ):
     """
@@ -170,14 +170,13 @@ async def logout(
 
     Args:
         refresh_token: Refresh token to revoke
-        current_user: Currently authenticated user
+        _current_user: Currently authenticated user (authentication only)
         auth_service: Authentication service
 
     Returns:
         Success message
     """
-    # Get access token from header (this would be passed in the request)
-    # For now, we'll just revoke the refresh token
+    # Revoke the refresh token (user authentication is enforced by dependency)
     await auth_service.revoke_token(refresh_token.refresh_token, "refresh")
 
     return {"message": "Successfully logged out"}
@@ -199,10 +198,71 @@ async def get_current_user_info(
     return current_user
 
 
+@router.post("/signup", response_model=User)
+async def signup(
+    user_data: UserCreate,
+    auth_service: AuthService = Depends(get_auth_service),
+):
+    """
+    Create a new user account (public endpoint).
+
+    Allows anyone to create a new user account with username and password.
+    The password must be at least 12 characters long.
+
+    Args:
+        user_data: User creation data
+        auth_service: Authentication service
+
+    Returns:
+        Created user
+
+    Raises:
+        HTTPException: If user already exists or validation fails
+    """
+    # Check if user already exists
+    if user_data.username in auth_service._users:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists",
+        )
+
+    # Force role to USER for public signup (security measure)
+    from agent_comm_core.models.auth import UserRole
+
+    if user_data.role != UserRole.USER:
+        user_data.role = UserRole.USER
+
+    # Create user
+    from datetime import datetime
+    from uuid import uuid4
+
+    user_id = str(uuid4())
+    password_hash = auth_service._hash_password(user_data.password)
+
+    auth_service._users[user_data.username] = {
+        "id": user_id,
+        "username": user_data.username,
+        "password_hash": password_hash,
+        "role": user_data.role.value,
+        "permissions": user_data.permissions,
+        "is_active": True,
+        "created_at": datetime.now(UTC),
+    }
+
+    return User(
+        id=user_id,
+        username=user_data.username,
+        role=user_data.role,
+        permissions=user_data.permissions,
+        is_active=True,
+        created_at=datetime.now(UTC),
+    )
+
+
 @router.post("/users", response_model=User)
 async def create_user(
     user_data: UserCreate,
-    current_admin: User = Depends(get_current_admin),
+    _current_admin: User = Depends(get_current_admin),
     auth_service: AuthService = Depends(get_auth_service),
 ):
     """
@@ -210,7 +270,7 @@ async def create_user(
 
     Args:
         user_data: User creation data
-        current_admin: Currently authenticated admin
+        _current_admin: Currently authenticated admin (authentication only)
         auth_service: Authentication service
 
     Returns:
