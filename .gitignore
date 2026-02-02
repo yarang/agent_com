@@ -132,7 +132,6 @@ config.local.json
 # Private keys (specific patterns to avoid false positives)
 # FIXED: Issue #237 - Replaced overly broad *key* and *secret* patterns
 *-key.*
-*_key.*
 *.key.*
 *-secret-key.*
 *-api-key.*
