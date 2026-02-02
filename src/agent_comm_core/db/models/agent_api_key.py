@@ -6,8 +6,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import JSON, DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -84,9 +83,9 @@ class AgentApiKeyDB(Base):
         nullable=False,
     )
 
-    # Capabilities (array of strings)
+    # Capabilities (JSON array for SQLite compatibility)
     capabilities: Mapped[list[str]] = mapped_column(
-        ARRAY(String),
+        JSON,
         nullable=False,
         default=list,
     )

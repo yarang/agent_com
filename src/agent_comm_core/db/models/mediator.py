@@ -10,7 +10,6 @@ from enum import Enum
 from uuid import UUID
 
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -345,9 +344,9 @@ class ChatRoomMediatorDB(Base):
         default=False,
     )
 
-    # Keywords that trigger this mediator
+    # Keywords that trigger this mediator (JSON array for SQLite compatibility)
     trigger_keywords: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String(100)),
+        JSON,
         nullable=True,
         default=None,
     )
