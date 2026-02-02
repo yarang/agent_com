@@ -178,6 +178,17 @@ async def root():
     )
 
 
+@app.get("/index.html")
+async def index_html():
+    """Serve index.html directly."""
+    from fastapi.responses import FileResponse
+
+    file_path = static_dir / "index.html"
+    if file_path.exists():
+        return FileResponse(str(file_path))
+    return JSONResponse(status_code=404, content={"error": "Index page not found"})
+
+
 @app.get("/mission-control.html")
 async def mission_control():
     """Serve Mission Control page."""
