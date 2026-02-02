@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Control Center - Owner Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/mission-control.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body class="mission-control-body">
+    <!-- Background gradient -->
+    <div class="bg-gradient"></div>
+    <div class="bg-pattern"></div>
+
+    <div class="mission-control-container">
+        <!-- Mission Control Header -->
+        <header class="mc-header">
+            <div class="mc-header-left">
+                <div class="mc-logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="3"/>
+                        <circle cx="16" cy="16" r="6" fill="currentColor"/>
+                        <circle cx="24" cy="10" r="4" fill="currentColor" opacity="0.6"/>
+                        <circle cx="8" cy="24" r="3" fill="currentColor" opacity="0.4"/>
+                    </svg>
+                </div>
+                <div class="mc-header-title">
+                    <h1>Mission Control Center</h1>
+                    <span>Owner Dashboard</span>
+                </div>
+            </div>
+            <div class="mc-header-right">
+                <div class="project-id-display">
+                    <span class="project-id-label">Project:</span>
+                    <span class="project-id-value" id="currentProjectId">proj_main</span>
+                </div>
+                <div class="connection-status" id="wsConnectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 3-Pane Layout -->
+        <main class="mc-main">
+            <!-- Left Pane: Agent & Assets -->
+            <aside class="mc-pane mc-pane-left" id="leftPane">
+                <div class="mc-pane-header">
+                    <h2>Agents & Assets</h2>
+                    <button class="btn-icon" id="refreshAgentsBtn" title="Refresh Agents">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Agent List -->
+                <div class="mc-section">
+                    <div class="mc-section-header">
+                        <h3>Active Agents</h3>
+                        <span class="agent-count-badge" id="activeAgentCount">0</span>
+                    </div>
+                    <div class="agent-list" id="agentList">
+                        <!-- Agents will be rendered here -->
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents Section -->
+                <div class="mc-section">
+                    <div class="mc-section-header">
+                        <h3>Documents</h3>
+                    </div>
+                    <div class="document-list" id="documentList">
+                        <div class="document-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            <span>Project Spec v1.2</span>
+                        </div>
+                        <div class="document-item">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            <span>Architecture Doc</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="mc-section">
+                    <div class="mc-section-header">
+                        <h3>Settings</h3>
+                    </div>
+                    <div class="settings-list">
+                        <div class="setting-item" onclick="showBudgetModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"/>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            <span>Budget</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </div>
+                        <div class="setting-item" onclick="showSecurityModal()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <span>Security</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Pane: Communication -->
+            <section class="mc-pane mc-pane-center" id="centerPane">
+                <div class="mc-pane-header">
+                    <div class="room-info">
+                        <h2 id="roomTitle">Main Discussion Room</h2>
+                        <span class="room-status" id="roomStatus">Active</span>
+                    </div>
+                    <div class="room-actions">
+                        <button class="btn-icon" id="toggleParticipantsBtn" title="Toggle Participants">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </button>
+                        <button class="btn-icon" id="leaveRoomBtn" title="Leave Room">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                                <polyline points="16 17 21 12 16 7"/>
+                                <line x1="21" y1="12" x2="9" y2="12"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div class="chat-container" id="chatContainer">
+                    <div class="chat-messages" id="chatMessages">
+                        <!-- Messages will be rendered here -->
+                        <div class="chat-system-message">
+                            <span class="system-message-content">Welcome to the Mission Control Center discussion room.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="chat-input-container">
+                    <div class="chat-input-wrapper">
+                        <textarea
+                            id="messageInput"
+                            class="chat-input"
+                            placeholder="Type your message here..."
+                            rows="1"
+                        ></textarea>
+                        <div class="chat-input-actions">
+                            <button class="btn-icon" id="attachFileBtn" title="Attach File">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                                </svg>
+                            </button>
+                            <button class="btn btn-primary btn-send" id="sendMessageBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="22" y1="2" x2="11" y2="13"/>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                                </svg>
+                                <span>Send</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Pane: Spec & Review (Decision Desk) -->
+            <aside class="mc-pane mc-pane-right" id="rightPane">
+                <div class="mc-pane-header">
+                    <h2>Decision Desk</h2>
+                    <div class="decision-badge" id="pendingDecisionsBadge">2 Pending</div>
+                </div>
+
+                <!-- Current Spec Card -->
+                <div class="mc-section">
+                    <div class="spec-card" id="currentSpecCard">
+                        <div class="spec-header">
+                            <div class="spec-title">Frontend Architecture Update</div>
+                            <span class="spec-status status-waiting">WAITING</span>
+                        </div>
+                        <div class="spec-meta">
+                            <span class="spec-id">SPEC-001</span>
+                            <span class="spec-version">v2.3</span>
+                        </div>
+                        <div class="spec-description">
+                            Update the frontend architecture to use React 19 with Server Components and implement the 3-pane Mission Control layout.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diff Viewer -->
+                <div class="mc-section">
+                    <div class="mc-section-header">
+                        <h3>Proposed Changes</h3>
+                        <div class="diff-actions">
+                            <button class="btn-diff-toggle active" data-view="side-by-side">Side by Side</button>
+                            <button class="btn-diff-toggle" data-view="unified">Unified</button>
+                        </div>
+                    </div>
+                    <div class="diff-viewer" id="diffViewer">
+                        <div class="diff-container diff-side-by-side">
+                            <div class="diff-column diff-before">
+                                <div class="diff-header">Before</div>
+                                <div class="diff-content">
+                                    <div class="diff-line diff-removed">
+                                        <span class="diff-line-num">42</span>
+                                        <pre>function Dashboard() {</pre>
+                                    </div>
+                                    <div class="diff-line diff-removed">
+                                        <span class="diff-line-num">43</span>
+                                        <pre>  return &lt;div className="dashboard"&gt;</pre>
+                                    </div>
+                                    <div class="diff-line diff-context">
+                                        <span class="diff-line-num">44</span>
+                                        <pre>    &lt;Header /&gt;</pre>
+                                    </div>
+                                    <div class="diff-line diff-context">
+                                        <span class="diff-line-num">45</span>
+                                        <pre>    &lt;main&gt;</pre>
+                                    </div>
+                                    <div class="diff-line diff-removed">
+                                        <span class="diff-line-num">46</span>
+                                        <pre>      &lt;StatsGrid /&gt;</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="diff-column diff-after">
+                                <div class="diff-header">After</div>
+                                <div class="diff-content">
+                                    <div class="diff-line diff-added">
+                                        <span class="diff-line-num">42</span>
+                                        <pre>function MissionControl() {</pre>
+                                    </div>
+                                    <div class="diff-line diff-added">
+                                        <span class="diff-line-num">43</span>
+                                        <pre>  return (</pre>
+                                    </div>
+                                    <div class="diff-line diff-context">
+                                        <span class="diff-line-num">44</span>
+                                        <pre>    &lt;&gt;</pre>
+                                    </div>
+                                    <div class="diff-line diff-added">
+                                        <span class="diff-line-num">45</span>
+                                        <pre>      &lt;ThreePaneLayout&gt;</pre>
+                                    </div>
+                                    <div class="diff-line diff-added">
+                                        <span class="diff-line-num">46</span>
+                                        <pre>        &lt;AgentsPane /&gt;</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="mc-action-bar">
+                    <button class="btn btn-secondary btn-reject" id="rejectChangesBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="15" y1="9" x2="9" y2="15"/>
+                            <line x1="9" y1="9" x2="15" y2="15"/>
+                        </svg>
+                        <span>Reject</span>
+                    </button>
+                    <button class="btn btn-primary btn-approve" id="approveChangesBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <span>Approve & Freeze</span>
+                    </button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Create Agent Modal -->
+    <div class="modal" id="createAgentModal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Agent</h3>
+                <button class="btn-close" onclick="closeModal('createAgentModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createAgentForm">
+                    <div class="form-group">
+                        <label for="agentRole">Role</label>
+                        <select id="agentRole" class="form-control" required>
+                            <option value="">Select role...</option>
+                            <option value="architect">Architect</option>
+                            <option value="developer">Developer</option>
+                            <option value="qa">QA Engineer</option>
+                            <option value="security">Security Specialist</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="agentName">Agent Name</label>
+                        <input type="text" id="agentName" class="form-control" placeholder="e.g., FrontendExpert" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Access Level</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="accessLevel" value="read_chat" checked>
+                                <span>Read Chat</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="accessLevel" value="write_chat" checked>
+                                <span>Write Chat</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="accessLevel" value="auto_approve">
+                                <span>Auto-Approve Changes</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('createAgentModal')">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Agent</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panic Button Confirmation Modal -->
+    <div class="modal modal-danger" id="panicModal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚠️ Panic: Pause Agent</h3>
+                <button class="btn-close" onclick="closeModal('panicModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="warning-text">You are about to pause this agent. This will:</p>
+                <ul class="warning-list">
+                    <li>Stop all agent activities immediately</li>
+                    <li>Revoke the API key access</li>
+                    <li>Mark the agent as PAUSED</li>
+                </ul>
+                <p class="confirm-text">Type <code>PAUSE</code> to confirm:</p>
+                <input type="text" id="panicConfirmInput" class="form-control" placeholder="Type PAUSE to confirm">
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('panicModal')">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmPanicBtn" disabled>Confirm Pause</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval Confirmation Modal -->
+    <div class="modal" id="approvalModal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Approval</h3>
+                <button class="btn-close" onclick="closeModal('approvalModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>You are about to approve and freeze these changes. This action:</p>
+                <ul>
+                    <li>Merges the proposed changes to the main branch</li>
+                    <li>Creates a frozen spec version</li>
+                    <li>Cannot be undone without creating a new spec</li>
+                </ul>
+                <div class="form-group">
+                    <label for="approvalComment">Comment (optional)</label>
+                    <textarea id="approvalComment" class="form-control" rows="3" placeholder="Add any notes about this approval..."></textarea>
+                </div>
+                <div class="confirmation-checklist">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reviewCheck">
+                        <span>I have reviewed the changes</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="testCheck">
+                        <span>Changes have been tested</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="freezeCheck">
+                        <span>I understand this cannot be undone</span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('approvalModal')">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="finalApprovalBtn" disabled>Approve & Freeze</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/mission-control.js"></script>
+</body>
+</html>
