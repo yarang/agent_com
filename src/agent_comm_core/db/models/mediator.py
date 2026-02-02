@@ -9,8 +9,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
@@ -126,7 +125,7 @@ class MediatorPromptDB(Base):
 
     # Project association
     project_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -188,7 +187,7 @@ class MediatorPromptDB(Base):
 
     # Creator
     created_by: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         default=None,
@@ -213,7 +212,7 @@ class MediatorDB(Base):
 
     # Project association
     project_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -233,7 +232,7 @@ class MediatorDB(Base):
 
     # Model configuration
     model_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("mediator_models.id", ondelete="RESTRICT"),
         nullable=False,
         index=True,
@@ -241,7 +240,7 @@ class MediatorDB(Base):
 
     # Default prompt
     default_prompt_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("mediator_prompts.id", ondelete="SET NULL"),
         nullable=True,
         default=None,
@@ -277,7 +276,7 @@ class MediatorDB(Base):
 
     # Creator
     created_by: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         default=None,
@@ -308,7 +307,7 @@ class ChatRoomMediatorDB(Base):
 
     # Chat room identifier (using project_id as room_id for now)
     room_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -316,7 +315,7 @@ class ChatRoomMediatorDB(Base):
 
     # Mediator assignment
     mediator_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("mediators.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -324,7 +323,7 @@ class ChatRoomMediatorDB(Base):
 
     # Optional prompt override for this room
     prompt_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("mediator_prompts.id", ondelete="SET NULL"),
         nullable=True,
         default=None,

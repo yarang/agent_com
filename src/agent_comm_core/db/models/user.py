@@ -6,8 +6,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import Boolean, DateTime, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent_comm_core.db.base import Base
@@ -33,7 +32,7 @@ class UserDB(Base):
 
     # Primary key
     id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         primary_key=True,
         default=uuid4,
         index=True,

@@ -10,9 +10,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
@@ -51,7 +49,7 @@ class ChatRoomDB(Base):
 
     # Project association
     project_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -70,7 +68,7 @@ class ChatRoomDB(Base):
 
     # Creator (human user)
     created_by: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         default=None,
@@ -101,7 +99,7 @@ class ChatParticipantDB(Base):
 
     # Room association
     room_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("chat_rooms.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -109,12 +107,12 @@ class ChatParticipantDB(Base):
 
     # Participant (either agent or user, not both)
     agent_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=True,
         default=None,
     )
     user_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True,
         default=None,
@@ -155,7 +153,7 @@ class ChatMessageDB(Base):
 
     # Room association
     room_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("chat_rooms.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -168,7 +166,7 @@ class ChatMessageDB(Base):
         default=SenderType.USER.value,
     )
     sender_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=False,
     )
 
@@ -183,10 +181,10 @@ class ChatMessageDB(Base):
         default=MessageType.TEXT.value,
     )
 
-    # Additional metadata (JSONB for flexibility)
+    # Additional metadata (JSON for SQLite/PostgreSQL compatibility)
     meta: Mapped[dict | None] = mapped_column(
         "metadata",
-        JSONB,
+        JSON,
         nullable=True,
         default=None,
     )

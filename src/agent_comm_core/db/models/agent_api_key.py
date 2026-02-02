@@ -6,8 +6,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import JSON, DateTime, ForeignKey, String, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent_comm_core.db.base import Base
@@ -40,7 +39,7 @@ class AgentApiKeyDB(Base):
 
     # Primary key
     id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         primary_key=True,
         default=uuid4,
         index=True,
@@ -48,7 +47,7 @@ class AgentApiKeyDB(Base):
 
     # Project binding (for multi-tenancy)
     project_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("projects.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -56,7 +55,7 @@ class AgentApiKeyDB(Base):
 
     # Agent identifier
     agent_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=False,
         index=True,
     )
@@ -112,7 +111,7 @@ class AgentApiKeyDB(Base):
         default=CreatorType.USER,
     )
     created_by_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=False,
     )
 

@@ -7,8 +7,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, JSON, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import JSON, BigInteger, DateTime, ForeignKey, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent_comm_core.db.base import Base
@@ -84,7 +83,7 @@ class AuditLogDB(Base):
         index=True,
     )
     entity_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=True,
         default=None,
         index=True,
@@ -92,7 +91,7 @@ class AuditLogDB(Base):
 
     # Project context (for multi-tenancy)
     project_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("projects.id", ondelete="SET NULL"),
         nullable=True,
         default=None,
@@ -106,7 +105,7 @@ class AuditLogDB(Base):
         index=True,
     )
     actor_id: Mapped[UUID | None] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=True,
         default=None,
         index=True,
