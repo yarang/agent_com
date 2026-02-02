@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from agent_comm_core.config import get_config as get_core_config
 from mcp_broker.core.config import BrokerConfig, get_config_legacy
 from mcp_broker.core.logging import get_logger, setup_logging
 from mcp_broker.core.security import SecurityMiddleware
@@ -78,7 +79,7 @@ app = FastAPI(
 
 
 # Initialize config for middleware setup
-_config = get_config()
+_config = get_core_config()
 
 # Add CORS middleware
 app.add_middleware(
@@ -236,7 +237,7 @@ async def security_status() -> SecurityStatusResponse:
     global _global_config
 
     if not _global_config:
-        _global_config = get_config()
+        _global_config = get_config_legacy()
 
     recommendations: list[str] = []
 
@@ -280,7 +281,7 @@ async def root() -> dict[str, str]:
 if __name__ == "__main__":
     import uvicorn
 
-    config = get_config()
+    config = get_config_legacy()
     uvicorn.run(
         "mcp_broker.main:app",
         host=config.host,
