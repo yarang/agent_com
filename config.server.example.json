@@ -9,14 +9,7 @@
       "key_path": "./certificates/key.pem"
     },
     "cors": {
-      "origins": [
-        "http://localhost:3000",
-        "http://localhost:8000",
-        "http://localhost:8001",
-        "https://localhost:3000",
-        "https://localhost:8000",
-        "https://localhost:8001"
-      ],
+      "origins": ["*"],
       "allow_credentials": true
     }
   },
