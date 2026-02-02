@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "server": {
     "host": "0.0.0.0",
-    "port": 8001,
+    "port": 8000,
     "ssl": {
       "enabled": false,
       "cert_path": "./certificates/cert.pem",
@@ -12,8 +12,10 @@
       "origins": [
         "http://localhost:3000",
         "http://localhost:8000",
+        "http://localhost:8001",
         "https://localhost:3000",
-        "https://localhost:8000"
+        "https://localhost:8000",
+        "https://localhost:8001"
       ],
       "allow_credentials": true
     }
