@@ -21,20 +21,20 @@
     }
   },
   "database": {
-    "url": "postgresql+asyncpg://agent:wd213307@localhost/agent_comm",
+    "url": "postgresql+asyncpg://agent:password@localhost/agent_comm",
     "pool_size": 10,
     "max_overflow": 20
   },
   "authentication": {
     "jwt": {
-      "secret_key": "dev-secret-key-32-chars-long-min-for-local-testing",
+      "secret_key": "CHANGE-THIS-IN-PRODUCTION-min-32-chars",
       "algorithm": "HS256",
       "access_token_expire_minutes": 15,
       "refresh_token_expire_days": 7
     },
     "api_token": {
       "prefix": "agent_",
-      "secret": "dev-api-token-secret-32-chars-min-for-local-testing"
+      "secret": "CHANGE-THIS-IN-PRODUCTION-min-32-chars"
     }
   },
   "security": {
@@ -51,8 +51,8 @@
     "format": "json"
   },
   "agent": {
-    "nickname": "DevAgent",
-    "project_id": "agent-comm",
+    "nickname": "YourAgent",
+    "project_id": "your-project",
     "capabilities": []
   },
   "communication_server": {
