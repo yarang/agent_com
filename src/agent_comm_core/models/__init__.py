@@ -4,35 +4,6 @@ Data models for Agent Communication System.
 Pydantic models for data validation and serialization.
 """
 
-from agent_comm_core.models.communication import (
-    Communication,
-    CommunicationCreate,
-    CommunicationDirection,
-)
-from agent_comm_core.models.meeting import (
-    Meeting,
-    MeetingCreate,
-    MeetingMessage,
-    MeetingMessageCreate,
-    MeetingParticipant,
-    MeetingParticipantCreate,
-    MeetingStatus,
-)
-from agent_comm_core.models.decision import (
-    Decision,
-    DecisionCreate,
-    DecisionStatus,
-)
-from agent_comm_core.models.status import (
-    ActivityPatterns,
-    AgentInfo,
-    AgentRegistration,
-    AgentStats,
-    AgentStatus,
-    MessageEvent,
-    SystemStats,
-    format_agent_display_id,
-)
 from agent_comm_core.models.auth import (
     Agent,
     AgentTokenCreate,
@@ -45,6 +16,45 @@ from agent_comm_core.models.auth import (
     User,
     UserCreate,
     UserRole,
+)
+from agent_comm_core.models.communication import (
+    Communication,
+    CommunicationCreate,
+    CommunicationDirection,
+)
+from agent_comm_core.models.decision import (
+    Decision,
+    DecisionCreate,
+    DecisionStatus,
+)
+from agent_comm_core.models.meeting import (
+    Meeting,
+    MeetingCreate,
+    MeetingMessage,
+    MeetingMessageCreate,
+    MeetingParticipant,
+    MeetingParticipantCreate,
+    MeetingStatus,
+)
+from agent_comm_core.models.project_chat import (
+    AgentAssignment,
+    AgentAssignmentRequest,
+    MessageType,
+    ProjectChatRoom,
+    ProjectCreateRequest,
+    ProjectMessage,
+    ProjectMessageCreate,
+    ProjectUpdateRequest,
+)
+from agent_comm_core.models.status import (
+    ActivityPatterns,
+    AgentInfo,
+    AgentRegistration,
+    AgentStats,
+    AgentStatus,
+    MessageEvent,
+    SystemStats,
+    format_agent_display_id,
 )
 
 __all__ = [
@@ -81,4 +91,13 @@ __all__ = [
     "User",
     "UserCreate",
     "UserRole",
+    # Project chat models
+    "AgentAssignment",
+    "AgentAssignmentRequest",
+    "MessageType",
+    "ProjectChatRoom",
+    "ProjectCreateRequest",
+    "ProjectMessage",
+    "ProjectMessageCreate",
+    "ProjectUpdateRequest",
 ]

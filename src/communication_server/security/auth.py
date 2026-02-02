@@ -250,6 +250,29 @@ class AuthService:
                 # Update last used timestamp
                 agent_data["last_used"] = datetime.now(UTC)
 
+                # MCP Broker fallback: Auto-register in AgentRegistry if not exists
+                try:
+                    from communication_server.services.agent_registry import get_agent_registry
+
+                    registry = get_agent_registry()
+                    existing_agent = await registry.get_agent_by_full_id(agent_id)
+
+                    if existing_agent is None:
+                        # Agent exists in AuthService but not in AgentRegistry, register it
+                        await registry.register_agent(
+                            full_id=agent_id,
+                            nickname=agent_data["nickname"],
+                            capabilities=agent_data.get("capabilities", []),
+                            project_id=agent_data.get("project_id"),
+                        )
+                except Exception as e:
+                    # Log but don't fail authentication if registry fails
+                    import logging
+
+                    logging.getLogger(__name__).warning(
+                        f"Failed to auto-register agent in AgentRegistry: {e}"
+                    )
+
                 return Agent(
                     id=agent_data["id"],
                     project_id=agent_data["project_id"],
@@ -332,6 +355,26 @@ class AuthService:
             "created_at": agent.created_at,
             "last_used": None,
         }
+
+        # Auto-register in AgentRegistry for dashboard display
+        try:
+            from communication_server.services.agent_registry import get_agent_registry
+
+            registry = get_agent_registry()
+            # Convert agent.id to string (Agent.id is UUID type)
+            await registry.register_agent(
+                full_id=str(agent.id),
+                nickname=nickname,
+                capabilities=capabilities,
+                project_id=project_id,
+            )
+        except Exception as e:
+            # Log but don't fail token creation if registry fails
+            import logging
+
+            logging.getLogger(__name__).warning(
+                f"Failed to auto-register agent in AgentRegistry: {e}"
+            )
 
         return token, agent
 

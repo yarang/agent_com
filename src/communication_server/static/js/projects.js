@@ -82,12 +82,35 @@ function renderProjectList() {
                           project.project_id === selectedProjectId;
         const selectedClass = isSelected ? 'selected' : '';
         const onlineClass = project.is_online ? 'online' : 'offline';
+        const pid = project.project_id || '';
+
+        // Don't show action buttons for "All Agents"
+        const actionButtons = project.project_id ? `
+            <button class="project-action-btn" data-action="chat" data-project-id="${pid}" title="Open chat">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </button>
+            <button class="project-action-btn" data-action="edit" data-project-id="${pid}" title="Edit project">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+            </button>
+            <button class="project-action-btn" data-action="delete" data-project-id="${pid}" title="Delete project">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+            </button>
+        ` : '';
 
         return `
             <div class="project-channel ${selectedClass}"
-                 data-project-id="${project.project_id || ''}"
-                 onclick="selectProject('${project.project_id || ''}')">
-                <div class="project-icon">
+                 data-project-id="${pid}"
+                 ondblclick="handleProjectDblClick('${pid}')">
+                <div class="project-icon"
+                     onclick="selectProject('${pid}')">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         ${project.project_id === null
                             ? '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'
@@ -95,14 +118,53 @@ function renderProjectList() {
                         }
                     </svg>
                 </div>
-                <div class="project-info">
+                <div class="project-info" onclick="selectProject('${pid}')">
                     <span class="project-name">${escapeHtml(project.name)}</span>
                     <span class="agent-count">${project.agent_count}</span>
                 </div>
                 <div class="project-status ${onlineClass}"></div>
+                ${actionButtons}
             </div>
         `;
     }).join('');
+
+    // Setup action button handlers
+    setupProjectActionButtons();
+}
+
+/**
+ * Setup project action button handlers
+ */
+function setupProjectActionButtons() {
+    document.querySelectorAll('.project-action-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const action = btn.dataset.action;
+            const projectId = btn.dataset.projectId;
+
+            switch (action) {
+                case 'chat':
+                    openProjectChatRoom(projectId);
+                    break;
+                case 'edit':
+                    showEditProjectModal(projectId);
+                    break;
+                case 'delete':
+                    confirmDeleteProject(projectId);
+                    break;
+            }
+        });
+    });
+}
+
+/**
+ * Handle project double-click - open chat room
+ * @param {string} projectId - Project ID
+ */
+function handleProjectDblClick(projectId) {
+    if (projectId && typeof openProjectChatRoom === 'function') {
+        openProjectChatRoom(projectId);
+    }
 }
 
 /**
@@ -184,6 +246,7 @@ window.initProjectSidebar = initProjectSidebar;
 window.selectProject = selectProject;
 window.getSelectedProjectId = getSelectedProjectId;
 window.toggleSidebar = toggleSidebar;
+window.handleProjectDblClick = handleProjectDblClick;
 
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {

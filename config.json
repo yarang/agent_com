@@ -19,7 +19,7 @@
     }
   },
   "database": {
-    "url": "postgresql+asyncpg://user:password@localhost/agent_comm",
+    "url": "postgresql+asyncpg://agent:wd213307@localhost/agent_comm",
     "pool_size": 10,
     "max_overflow": 20
   },

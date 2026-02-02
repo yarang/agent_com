@@ -764,6 +764,201 @@ async function fetchMessageDetail(messageId) {
     }
 }
 
+// ==================== Project Management API ====================
+
+/**
+ * Create a new project
+ * @param {Object} projectData - Project data
+ * @param {string} projectData.project_id - Project ID (snake_case)
+ * @param {string} projectData.name - Project name
+ * @param {string} [projectData.description] - Project description
+ * @param {string[]} [projectData.tags] - Project tags
+ * @returns {Promise<Object>} Response with created project and API keys
+ */
+async function createProject(projectData) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects`, {
+            method: 'POST',
+            body: JSON.stringify(projectData),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating project:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get project details
+ * @param {string} projectId - Project ID
+ * @returns {Promise<Object>} Response with project details
+ */
+async function getProject(projectId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting project:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update a project
+ * @param {string} projectId - Project ID
+ * @param {Object} updates - Project updates
+ * @param {string} [updates.name] - New name
+ * @param {string} [updates.description] - New description
+ * @param {string[]} [updates.tags] - New tags
+ * @param {string} [updates.status] - New status (active, inactive, suspended)
+ * @returns {Promise<Object>} Response with updated project
+ */
+async function updateProject(projectId, updates) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating project:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete a project
+ * @param {string} projectId - Project ID
+ * @param {boolean} [force=false] - Force delete even with active agents
+ * @returns {Promise<Object>} Response with deletion confirmation
+ */
+async function deleteProject(projectId, force = false) {
+    try {
+        const url = force
+            ? `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}?force=true`
+            : `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}`;
+        const response = await fetchWithAuth(url, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting project:', error);
+        throw error;
+    }
+}
+
+/**
+ * Assign an agent to a project
+ * @param {string} projectId - Project ID
+ * @param {Object} assignment - Assignment data
+ * @param {string} assignment.agent_id - Agent ID to assign
+ * @param {string} [assignment.role='member'] - Agent role
+ * @returns {Promise<Object>} Response with assignment confirmation
+ */
+async function assignAgentToProject(projectId, assignment) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/agents`, {
+            method: 'POST',
+            body: JSON.stringify(assignment),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error assigning agent to project:', error);
+        throw error;
+    }
+}
+
+/**
+ * Unassign an agent from a project
+ * @param {string} projectId - Project ID
+ * @param {string} agentId - Agent ID to unassign
+ * @returns {Promise<Object>} Response with unassignment confirmation
+ */
+async function unassignAgentFromProject(projectId, agentId) {
+    try {
+        const response = await fetchWithAuth(
+            `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/agents/${encodeURIComponent(agentId)}`,
+            {
+                method: 'DELETE',
+            }
+        );
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error unassigning agent from project:', error);
+        throw error;
+    }
+}
+
+/**
+ * Send a message to a project chat room
+ * @param {string} projectId - Project ID
+ * @param {Object} message - Message data
+ * @param {string} message.from_agent - Sender agent ID
+ * @param {string} message.content - Message content
+ * @param {string} [message.message_type='statement'] - Message type
+ * @param {string} [message.in_reply_to] - ID of message this replies to
+ * @returns {Promise<Object>} Response with created message
+ */
+async function sendProjectMessage(projectId, message) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/messages`, {
+            method: 'POST',
+            body: JSON.stringify(message),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error sending project message:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get messages from a project chat room
+ * @param {string} projectId - Project ID
+ * @param {Object} options - Query options
+ * @param {number} [options.limit=50] - Maximum results
+ * @param {string} [options.before] - Pagination cursor (message ID)
+ * @returns {Promise<Object>} Response with messages array
+ */
+async function getProjectMessages(projectId, options = {}) {
+    const { limit = 50, before = null } = options;
+
+    const params = new URLSearchParams({ limit });
+    if (before) params.append('before', before);
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/messages?${params}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching project messages:', error);
+        throw error;
+    }
+}
+
 // Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
@@ -800,6 +995,15 @@ if (typeof module !== 'undefined' && module.exports) {
         fetchProjectAgents,
         fetchMessages,
         fetchMessageDetail,
+        // Project management
+        createProject,
+        getProject,
+        updateProject,
+        deleteProject,
+        assignAgentToProject,
+        unassignAgentFromProject,
+        sendProjectMessage,
+        getProjectMessages,
     };
 }
 
@@ -838,4 +1042,13 @@ if (typeof window !== 'undefined') {
     window.fetchProjectAgents = fetchProjectAgents;
     window.fetchMessages = fetchMessages;
     window.fetchMessageDetail = fetchMessageDetail;
+    // Project management
+    window.createProject = createProject;
+    window.getProject = getProject;
+    window.updateProject = updateProject;
+    window.deleteProject = deleteProject;
+    window.assignAgentToProject = assignAgentToProject;
+    window.unassignAgentFromProject = unassignAgentFromProject;
+    window.sendProjectMessage = sendProjectMessage;
+    window.getProjectMessages = getProjectMessages;
 }

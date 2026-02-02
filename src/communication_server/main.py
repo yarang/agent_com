@@ -24,6 +24,7 @@ from communication_server.api import (
     meetings_router,
     messages_router,
     projects_router,
+    security_router,
     status_router,
 )
 
@@ -102,6 +103,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(i18n_router, prefix="/api/v1")
 app.include_router(projects_router, prefix="/api/v1")
 app.include_router(messages_router, prefix="/api/v1")
+app.include_router(security_router, prefix="/api/v1")
 
 # Mount static files for dashboard
 # Mount at root level to serve CSS/JS directly
