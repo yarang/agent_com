@@ -11,11 +11,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 
-from agent_comm_core.models.auth import User
 from agent_comm_core.models.communication import Communication, CommunicationDirection
 from agent_comm_core.services.communication import CommunicationService
 from communication_server.dependencies import get_communication_service
-from communication_server.security.dependencies import get_current_user
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -118,7 +116,6 @@ async def list_messages(
     to_agent: str | None = Query(None, description="Filter by recipient agent"),
     limit: int = Query(50, ge=1, le=200, description="Messages per page"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
-    user: User = Depends(get_current_user),  # noqa: ARG001
     service: CommunicationService = Depends(get_communication_service),
 ) -> list[MessageListItem]:
     """
@@ -133,7 +130,6 @@ async def list_messages(
         to_agent: Optional recipient agent filter
         limit: Maximum number of results
         offset: Pagination offset
-        user: Authenticated user (injected)
         service: Communication service (injected)
 
     Returns:
@@ -195,7 +191,6 @@ async def list_messages(
 @router.get("/{message_id}", response_model=MessageDetail)
 async def get_message_detail(
     message_id: str,
-    user: User = Depends(get_current_user),  # noqa: ARG001
     service: CommunicationService = Depends(get_communication_service),
 ) -> MessageDetail:
     """
@@ -203,7 +198,6 @@ async def get_message_detail(
 
     Args:
         message_id: Message UUID string
-        user: Authenticated user (injected)
         service: Communication service (injected)
 
     Returns:
