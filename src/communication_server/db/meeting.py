@@ -7,8 +7,8 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
+from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
@@ -44,7 +44,7 @@ class MeetingDB(Base):
 
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
-    agenda: Mapped[list] = mapped_column(JSONB, default=[], nullable=False)
+    agenda: Mapped[list] = mapped_column(JSON, default=[], nullable=False)
     max_duration_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[MeetingStatus] = mapped_column(
         SQLEnum(MeetingStatus), default=MeetingStatus.PENDING, nullable=False, index=True
@@ -176,9 +176,9 @@ class DecisionDB(Base):
 
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    context: Mapped[dict] = mapped_column(JSONB, default={}, nullable=False)
+    context: Mapped[dict] = mapped_column(JSON, default={}, nullable=False)
     proposed_by: Mapped[str] = mapped_column(String(255), nullable=False)
-    options: Mapped[list] = mapped_column(JSONB, default=[], nullable=False)
+    options: Mapped[list] = mapped_column(JSON, default=[], nullable=False)
     status: Mapped[DecisionStatus] = mapped_column(
         SQLEnum(DecisionStatus), default=DecisionStatus.PENDING, nullable=False, index=True
     )
@@ -188,7 +188,7 @@ class DecisionDB(Base):
         nullable=True,
         index=True,
     )
-    selected_option: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    selected_option: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     rationale: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     deadline: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

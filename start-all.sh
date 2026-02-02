@@ -6,6 +6,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 cd "$PROJECT_DIR"
 
+# 패키지 설치 확인
+echo "패키지 의존성 확인 중..."
+if ! uv run python -c "import agent_comm_core" 2>/dev/null; then
+    echo "패키지가 설치되지 않았습니다. uv sync 실행 중..."
+    uv sync
+    echo "패키지 설치 완료"
+fi
+echo ""
+
 # 기존 프로세스 정리
 echo "기존 프로세스 확인 중..."
 pkill -f "communication_server.main" 2>/dev/null && echo "  기존 Communication Server 중지됨" || true

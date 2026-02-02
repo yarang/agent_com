@@ -7,8 +7,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import BigInteger, DateTime, ForeignKey, JSON, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -125,9 +124,9 @@ class AuditLogDB(Base):
         default=None,
     )
 
-    # Action details (JSONB for flexibility)
+    # Action details (JSON for cross-database compatibility)
     action_details: Mapped[dict[str, Any] | None] = mapped_column(
-        JSONB,
+        JSON,
         nullable=True,
         default=None,
     )
