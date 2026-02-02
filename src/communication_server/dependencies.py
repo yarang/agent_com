@@ -5,19 +5,17 @@ Provides functions for injecting services and database sessions
 into API route handlers.
 """
 
+from collections.abc import AsyncGenerator
 from functools import lru_cache
-from typing import AsyncGenerator
-from uuid import UUID
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from agent_comm_core.config import Config, get_config
-from agent_comm_core.db.database import db_session, get_engine
+from agent_comm_core.db.database import db_session
 from agent_comm_core.services.communication import CommunicationService
-from agent_comm_core.services.meeting import MeetingService
 from agent_comm_core.services.discussion import DiscussionService
-
+from agent_comm_core.services.meeting import MeetingService
 from communication_server.repositories.communication import (
     SQLAlchemyCommunicationRepository,
 )
@@ -45,7 +43,7 @@ def get_database_url() -> str:
     return config.get_database_url()
 
 
-async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
+async def get_db_session() -> AsyncGenerator[AsyncSession]:
     """
     Get a database session for use in API routes.
 
@@ -128,7 +126,6 @@ async def get_communication_repository(
     Returns:
         Communication repository instance
     """
-    from agent_comm_core.repositories.base import CommunicationRepository
 
     return SQLAlchemyCommunicationRepository(session)
 
@@ -145,6 +142,22 @@ async def get_meeting_repository(
     Returns:
         Meeting repository instance
     """
-    from agent_comm_core.repositories.base import MeetingRepository
 
     return SQLALchemyMeetingRepository(session)
+
+
+async def get_project_repository(
+    session: AsyncSession = Depends(get_db_session),
+):
+    """
+    Get a project repository instance.
+
+    Args:
+        session: Database session
+
+    Returns:
+        Project repository instance
+    """
+    from agent_comm_core.repositories import ProjectRepository
+
+    return ProjectRepository(session)

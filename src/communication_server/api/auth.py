@@ -5,8 +5,6 @@ Provides login, logout, token refresh, and user management for dashboard users,
 as well as agent token management.
 """
 
-from datetime import UTC
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
@@ -19,6 +17,7 @@ from agent_comm_core.models.auth import (
     Token,
     User,
     UserCreate,
+    UserRole,
 )
 from communication_server.security.auth import AuthService, get_auth_service
 from communication_server.security.dependencies import get_current_admin, get_current_user
@@ -219,44 +218,52 @@ async def signup(
     Raises:
         HTTPException: If user already exists or validation fails
     """
-    # Check if user already exists
-    if user_data.username in auth_service._users:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Username already exists",
-        )
+    from agent_comm_core.db.database import db_session
+    from agent_comm_core.repositories import UserRepository
 
     # Force role to USER for public signup (security measure)
-    from agent_comm_core.models.auth import UserRole
-
     if user_data.role != UserRole.USER:
         user_data.role = UserRole.USER
 
-    # Create user
-    from datetime import datetime
-    from uuid import uuid4
+    # Generate default email from username if not provided
+    email = getattr(user_data, "email", None) or f"{user_data.username}@localhost"
 
-    user_id = str(uuid4())
-    password_hash = auth_service._hash_password(user_data.password)
+    async with db_session() as session:
+        repo = UserRepository(session)
 
-    auth_service._users[user_data.username] = {
-        "id": user_id,
-        "username": user_data.username,
-        "password_hash": password_hash,
-        "role": user_data.role.value,
-        "permissions": user_data.permissions,
-        "is_active": True,
-        "created_at": datetime.now(UTC),
-    }
+        # Check if user already exists
+        if await repo.username_exists(user_data.username):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Username already exists",
+            )
 
-    return User(
-        id=user_id,
-        username=user_data.username,
-        role=user_data.role,
-        permissions=user_data.permissions,
-        is_active=True,
-        created_at=datetime.now(UTC),
-    )
+        # Check if email already exists
+        if await repo.email_exists(email):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already exists",
+            )
+
+        # Create user in database
+        password_hash = auth_service._hash_password(user_data.password)
+        user_db = await repo.create(
+            username=user_data.username,
+            email=email,
+            password_hash=password_hash,
+            role=user_data.role.value,
+            permissions=user_data.permissions,
+        )
+        await session.commit()
+
+        return User(
+            id=str(user_db.id),
+            username=user_db.username,
+            role=user_data.role,
+            permissions=user_data.permissions,
+            is_active=user_db.is_active,
+            created_at=user_db.created_at,
+        )
 
 
 @router.post("/users", response_model=User)
@@ -279,38 +286,48 @@ async def create_user(
     Raises:
         HTTPException: If user already exists or lacks admin privileges
     """
-    # Check if user already exists
-    if user_data.username in auth_service._users:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User already exists",
+    from agent_comm_core.db.database import db_session
+    from agent_comm_core.repositories import UserRepository
+
+    # Generate default email from username if not provided
+    email = getattr(user_data, "email", None) or f"{user_data.username}@localhost"
+
+    async with db_session() as session:
+        repo = UserRepository(session)
+
+        # Check if user already exists
+        if await repo.username_exists(user_data.username):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="User already exists",
+            )
+
+        # Check if email already exists
+        if await repo.email_exists(email):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already exists",
+            )
+
+        # Create user in database
+        password_hash = auth_service._hash_password(user_data.password)
+        user_db = await repo.create(
+            username=user_data.username,
+            email=email,
+            password_hash=password_hash,
+            role=user_data.role.value,
+            permissions=user_data.permissions,
         )
+        await session.commit()
 
-    # Create user
-    from datetime import datetime
-    from uuid import uuid4
-
-    user_id = str(uuid4())
-    password_hash = auth_service._hash_password(user_data.password)
-
-    auth_service._users[user_data.username] = {
-        "id": user_id,
-        "username": user_data.username,
-        "password_hash": password_hash,
-        "role": user_data.role.value,
-        "permissions": user_data.permissions,
-        "is_active": True,
-        "created_at": datetime.now(UTC),
-    }
-
-    return User(
-        id=user_id,
-        username=user_data.username,
-        role=user_data.role,
-        permissions=user_data.permissions,
-        is_active=True,
-        created_at=datetime.now(UTC),
-    )
+        return User(
+            id=str(user_db.id),
+            username=user_db.username,
+            role=user_data.role,
+            permissions=user_data.permissions,
+            is_active=user_db.is_active,
+            created_at=user_db.created_at,
+        )
 
 
 @router.post("/agent-tokens", response_model=AgentTokenResponse)
@@ -373,24 +390,32 @@ async def change_password(
     Raises:
         HTTPException: If current password is incorrect
     """
-    # Verify current password
-    user_data = auth_service._users.get(current_user.username)
-    if not user_data:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+    from uuid import UUID
 
-    if not auth_service._verify_password(
-        password_data.current_password, user_data["password_hash"]
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Current password is incorrect",
-        )
+    from agent_comm_core.db.database import db_session
+    from agent_comm_core.repositories import UserRepository
 
-    # Update password
-    new_password_hash = auth_service._hash_password(password_data.new_password)
-    user_data["password_hash"] = new_password_hash
+    async with db_session() as session:
+        repo = UserRepository(session)
 
-    return {"message": "Password changed successfully"}
+        # Get user from database
+        user_db = await repo.get_by_id(UUID(current_user.id))
+        if not user_db:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        # Verify current password
+        if not auth_service._verify_password(password_data.current_password, user_db.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Current password is incorrect",
+            )
+
+        # Update password
+        new_password_hash = auth_service._hash_password(password_data.new_password)
+        await repo.update_password(user_db.id, new_password_hash)
+        await session.commit()
+
+        return {"message": "Password changed successfully"}

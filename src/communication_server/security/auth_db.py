@@ -1,23 +1,23 @@
 """
-Authentication service for user and agent authentication.
+Database-backed authentication service for user and agent authentication.
 
 Provides methods for authenticating dashboard users (JWT) and
-agents (API tokens), as well as token management.
-
-This service now uses database storage for persistence across
-server restarts.
+agents (API tokens), with persistent storage in the database.
 """
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from jose import JWTError
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from agent_comm_core.config import get_config
 from agent_comm_core.db.database import db_session
+from agent_comm_core.db.models.agent_api_key import AgentApiKeyDB
+from agent_comm_core.db.models.user import UserDB
 from agent_comm_core.models.auth import Agent, User, UserRole
-from agent_comm_core.repositories import UserRepository
+from agent_comm_core.repositories import AgentApiKeyRepository, UserRepository
 from communication_server.security.tokens import (
     create_access_token,
     create_refresh_token,
@@ -82,12 +82,28 @@ def _parse_permissions(permissions_str: str | None) -> list[str]:
         return []
 
 
-class AuthService:
+def _serialize_permissions(permissions: list[str] | None) -> str | None:
+    """Serialize permissions to JSON string.
+
+    Args:
+        permissions: List of permissions
+
+    Returns:
+        JSON string or None
     """
-    Authentication service for users and agents.
+    if not permissions:
+        return None
+    import json
+
+    return json.dumps(permissions)
+
+
+class AuthServiceDB:
+    """
+    Database-backed authentication service for users and agents.
 
     Handles JWT authentication for dashboard users and API token
-    authentication for agents. Uses database storage for persistence.
+    authentication for agents, with persistent database storage.
     """
 
     def __init__(self):
@@ -97,17 +113,25 @@ class AuthService:
         # In-memory refresh token storage (volatile by design)
         self._refresh_tokens: dict[str, str] = {}
 
-        # Note: Users and agents are now stored in the database
-        # We don't initialize admin here to avoid database access in __init__
+    async def _get_db_session(self) -> AsyncSession:
+        """Get a database session.
+
+        Returns:
+            Async database session
+        """
+        # Use the context manager to get a session
+        # Note: The caller is responsible for committing/closing
+        from agent_comm_core.db.database import get_session_maker
+
+        session_maker = get_session_maker()
+        return session_maker()
 
     async def _initialize_admin_user(self) -> None:
         """
-        Initialize default admin user on first startup.
+        Initialize default admin user if no users exist in database.
 
         The admin credentials should be changed immediately after first login.
-        This method is idempotent - it only creates the admin user if no users exist.
         """
-
         async with db_session() as session:
             repo = UserRepository(session)
 
@@ -132,15 +156,6 @@ class AuthService:
                 permissions=["*"],
             )
             await session.commit()
-
-    async def _ensure_admin_exists(self) -> None:
-        """Ensure admin user exists, creating if necessary."""
-        try:
-            await self._initialize_admin_user()
-        except Exception:
-            # If initialization fails, continue anyway
-            # (admin may already exist)
-            pass
 
     def _hash_password(self, password: str) -> str:
         """
@@ -187,6 +202,46 @@ class AuthService:
         except (VerifyMismatchError, ValueError, TypeError):
             return False
 
+    def _userdb_to_user(self, user_db: UserDB) -> User:
+        """
+        Convert UserDB to User model.
+
+        Args:
+            user_db: Database user model
+
+        Returns:
+            User model
+        """
+        return User(
+            id=str(user_db.id),
+            username=user_db.username,
+            role=UserRole(user_db.role),
+            permissions=_parse_permissions(user_db.permissions),
+            is_active=user_db.is_active,
+            created_at=user_db.created_at,
+        )
+
+    def _agentkeydb_to_agent(self, key_db: AgentApiKeyDB) -> Agent:
+        """
+        Convert AgentApiKeyDB to Agent model.
+
+        Args:
+            key_db: Database agent key model
+
+        Returns:
+            Agent model
+        """
+        return Agent(
+            id=str(key_db.agent_id),
+            project_id=str(key_db.project_id),
+            nickname=key_db.key_id,  # Use key_id as nickname
+            token=key_db.api_key_hash,
+            capabilities=key_db.capabilities,
+            is_active=key_db.is_active,
+            created_at=key_db.created_at,
+            last_used=key_db.updated_at,
+        )
+
     async def authenticate_dashboard_user(self, username: str, password: str) -> User | None:
         """
         Authenticate a dashboard user with username and password.
@@ -198,9 +253,6 @@ class AuthService:
         Returns:
             User object if authentication successful, None otherwise
         """
-        # Ensure admin user exists for initial login
-        await self._ensure_admin_exists()
-
         async with db_session() as session:
             repo = UserRepository(session)
             user_db = await repo.get_by_username(username)
@@ -214,15 +266,7 @@ class AuthService:
             if not self._verify_password(password, user_db.password_hash):
                 return None
 
-            # Convert UserDB to User model
-            return User(
-                id=str(user_db.id),
-                username=user_db.username,
-                role=UserRole(user_db.role),
-                permissions=_parse_permissions(user_db.permissions),
-                is_active=user_db.is_active,
-                created_at=user_db.created_at,
-            )
+            return self._userdb_to_user(user_db)
 
     async def authenticate_user_with_token(self, token: str) -> User | None:
         """
@@ -248,10 +292,6 @@ class AuthService:
             # Get user from database
             async with db_session() as session:
                 repo = UserRepository(session)
-
-                # Convert user_id string to UUID
-                from uuid import UUID
-
                 user_db = await repo.get_by_id(UUID(token_data.user_id))
 
                 if not user_db:
@@ -260,14 +300,7 @@ class AuthService:
                 if not user_db.is_active:
                     return None
 
-                return User(
-                    id=str(user_db.id),
-                    username=user_db.username,
-                    role=UserRole(user_db.role),
-                    permissions=_parse_permissions(user_db.permissions),
-                    is_active=user_db.is_active,
-                    created_at=user_db.created_at,
-                )
+                return self._userdb_to_user(user_db)
 
         except (JWTError, ValidationError, ValueError):
             return None
@@ -297,13 +330,11 @@ class AuthService:
                     created_at=datetime.now(UTC),
                 )
 
-        # Find agent by token hash in database
         # Hash the provided token to compare with stored hashes
         token_hash = hash_api_token(token)
 
+        # Find agent by token hash in database
         async with db_session() as session:
-            from agent_comm_core.repositories import AgentApiKeyRepository
-
             repo = AgentApiKeyRepository(session)
             key_db = await repo.get_by_hash(token_hash)
 
@@ -341,18 +372,7 @@ class AuthService:
                     f"Failed to auto-register agent in AgentRegistry: {e}"
                 )
 
-            return Agent(
-                id=str(key_db.agent_id),
-                project_id=str(key_db.project_id),
-                nickname=key_db.key_id,
-                token=key_db.api_key_hash,
-                capabilities=key_db.capabilities,
-                is_active=key_db.is_active,
-                created_at=key_db.created_at,
-                last_used=key_db.updated_at,
-            )
-
-        return None
+            return self._agentkeydb_to_agent(key_db)
 
     async def create_user_tokens(self, user_id: str) -> dict:
         """
@@ -394,72 +414,42 @@ class AuthService:
         Note:
             The plain token is only returned once. Store it securely.
         """
-        from agent_comm_core.db.models.project import ProjectDB
-        from agent_comm_core.repositories import AgentApiKeyRepository
-
         # Generate token
         token = generate_agent_token(project_id, nickname)
         hashed_token = hash_api_token(token)
 
-        # Create agent ID
-        agent_id = uuid4()
-
-        # Convert project_id to UUID (create default project if needed)
+        # Convert project_id to UUID
         try:
-            project_uuid = uuid4() if project_id == "default" else UUID(project_id)
+            project_uuid = UUID(project_id) if isinstance(project_id, str) else project_id
         except ValueError:
             # If project_id is not a valid UUID, create a new one
             project_uuid = uuid4()
+
+        # Create agent ID
+        agent_id = uuid4()
 
         # Generate key_id (human-readable identifier)
         key_id = f"{nickname}_{agent_id.hex[:8]}"
 
         # Store in database
         async with db_session() as session:
-            # Check if project exists, if not create a default one
-            from sqlalchemy import select
-
-            project_result = await session.execute(
-                select(ProjectDB).where(ProjectDB.id == project_uuid)
-            )
-            project_db = project_result.scalar_one_or_none()
-
-            if not project_db:
-                # Create a default project for the agent
-                # We need a user_id for the project, use a system user
-                default_user = await session.execute(
-                    select(UserDB).where(UserDB.username == "admin")
-                )
-                user_db = default_user.scalar_one_or_none()
-
-                if not user_db:
-                    # No admin user exists, can't create project
-                    raise ValueError("No project found and no admin user to create default project")
-
-                project_db = ProjectDB(
-                    id=project_uuid,
-                    owner_id=user_db.id,
-                    project_id=f"project_{project_uuid.hex[:8]}",
-                    name=f"Default Project for {nickname}",
-                    status="active",
-                )
-                session.add(project_db)
-                await session.flush()
-
             repo = AgentApiKeyRepository(session)
 
-            # Create the agent API key
-            await repo.create(
-                project_id=project_uuid,
-                agent_id=agent_id,
-                key_id=key_id,
-                api_key_hash=hashed_token,
-                key_prefix=token[:20],  # Store first 20 chars as prefix
-                capabilities=capabilities,
-                created_by_type="user",
-                created_by_id=uuid4(),  # Default to system user
-            )
-            await session.commit()
+            # Check if agent already exists in project
+            existing = await repo.agent_exists_in_project(project_uuid, agent_id)
+
+            if not existing:
+                await repo.create(
+                    project_id=project_uuid,
+                    agent_id=agent_id,
+                    key_id=key_id,
+                    api_key_hash=hashed_token,
+                    key_prefix=token[:20],  # Store first 20 chars as prefix
+                    capabilities=capabilities,
+                    created_by_type="user",
+                    created_by_id=uuid4(),  # Default to system user
+                )
+                await session.commit()
 
         # Create Agent model
         agent = Agent(
@@ -561,17 +551,17 @@ class AuthService:
 
 
 # Global auth service instance
-_auth_service: AuthService | None = None
+_auth_service_db: AuthServiceDB | None = None
 
 
-def get_auth_service() -> AuthService:
+def get_auth_service_db() -> AuthServiceDB:
     """
-    Get the global authentication service instance.
+    Get the global database-backed authentication service instance.
 
     Returns:
-        AuthService singleton instance
+        AuthServiceDB singleton instance
     """
-    global _auth_service
-    if _auth_service is None:
-        _auth_service = AuthService()
-    return _auth_service
+    global _auth_service_db
+    if _auth_service_db is None:
+        _auth_service_db = AuthServiceDB()
+    return _auth_service_db

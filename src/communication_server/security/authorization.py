@@ -12,6 +12,7 @@ from fastapi import Depends, HTTPException, status
 
 from agent_comm_core.db.models.user import UserRole
 from agent_comm_core.models.auth import Agent, User
+from communication_server.security.dependencies import get_current_agent, get_current_user
 
 # ============================================================================
 # Permission Constants
@@ -327,10 +328,7 @@ def can_modify_project(user: User, project_owner_id: str, user_id: str) -> bool:
         return True
 
     # Admins can modify (if they're project owners)
-    if user.role == UserRole.ADMIN:
-        return True
-
-    return False
+    return user.role == UserRole.ADMIN
 
 
 def can_access_project(user: User, project_owner_id: str) -> bool:
@@ -348,8 +346,7 @@ def can_access_project(user: User, project_owner_id: str) -> bool:
         return True
 
     # Owner can access their project
-    # (In real implementation, check project membership)
-    return True
+    return user.id == project_owner_id
 
 
 # ============================================================================

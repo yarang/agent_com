@@ -11,10 +11,10 @@
         "mcp-broker"
       ],
       "env": {
-        "AGENT_TOKEN": "${agent_default_test_uLebAxxQ2aEvzN8KXJC2iWrmXK1WoysL4d-uGL2YYV4}",
+        "AGENT_TOKEN": "agent_default_local-agent_dZ2dvtZi7F0Ya3oElDgN1KH7ipnvQBCSbEuail50cCk",
         "AGENT_NICKNAME": "local-agent",
-        "AGENT_PROJECT_ID": "agent-comm",
-        "COMMUNICATION_SERVER_URL": "https://oci-ajou-ec2.fcoinfup.com:8000",
+        "AGENT_PROJECT_ID": "default",
+        "COMMUNICATION_SERVER_URL": "http://oci-ajou-ec2.fcoinfup.com:8000",
         "PYTHONUNBUFFERED": "1"
       }
     },

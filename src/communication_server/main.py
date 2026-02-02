@@ -18,12 +18,16 @@ from fastapi.staticfiles import StaticFiles
 from agent_comm_core.config import Config, ConfigLoader
 from agent_comm_core.db.database import close_db, get_engine, init_db
 from communication_server.api import (
+    agents_router,
     auth_router,
+    chat_router,
     communications_router,
     decisions_router,
     i18n_router,
+    mediators_router,
     meetings_router,
     messages_router,
+    projects_db_router,
     projects_router,
     security_router,
     status_router,
@@ -97,15 +101,19 @@ if config.security.rate_limiting.enabled:
     )
 
 # Include API routers
-app.include_router(communications_router, prefix="/api/v1")
-app.include_router(meetings_router, prefix="/api/v1")
-app.include_router(decisions_router, prefix="/api/v1")
-app.include_router(status_router, prefix="/api/v1")
+app.include_router(agents_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(chat_router, prefix="/api/v1")
+app.include_router(communications_router, prefix="/api/v1")
+app.include_router(decisions_router, prefix="/api/v1")
 app.include_router(i18n_router, prefix="/api/v1")
-app.include_router(projects_router, prefix="/api/v1")
+app.include_router(mediators_router, prefix="/api/v1")
+app.include_router(meetings_router, prefix="/api/v1")
 app.include_router(messages_router, prefix="/api/v1")
+app.include_router(projects_db_router, prefix="/api/v1/db")
+app.include_router(projects_router, prefix="/api/v1")
 app.include_router(security_router, prefix="/api/v1")
+app.include_router(status_router, prefix="/api/v1")
 
 # Mount static files for dashboard
 # Mount at root level to serve CSS/JS directly
@@ -162,6 +170,7 @@ async def root():
                 "health": "/health",
                 "websocket": "/ws/meetings/{meeting_id}",
                 "status_websocket": "/ws/status",
+                "chat_websocket": "/ws/chat/{room_id}",
                 "docs": "/docs",
                 "dashboard": "/static/index.html",
             },
@@ -211,6 +220,35 @@ async def websocket_status_endpoint(websocket: WebSocket, token: str | None = No
 
     handler = get_status_handler(connection_manager)
     await handler.handle_connection(websocket, token)
+
+
+@app.websocket("/ws/chat/{room_id}")
+async def websocket_chat_endpoint(websocket: WebSocket, room_id: str, token: str | None = None):
+    """
+    WebSocket endpoint for real-time chat room communication.
+
+    Authentication required via token query parameter (JWT for users, API token for agents).
+    Broadcasts messages, participant join/leave events, and typing indicators.
+
+    Args:
+        websocket: WebSocket connection
+        room_id: Chat room ID (UUID string)
+        token: Authentication token (JWT access token or API token)
+    """
+    from uuid import UUID
+
+    from communication_server.websocket.chat_handler import ChatWebSocketHandler
+    from communication_server.websocket.chat_manager import get_chat_manager
+
+    try:
+        room_uuid = UUID(room_id)
+    except ValueError:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    chat_manager = get_chat_manager()
+    handler = ChatWebSocketHandler(chat_manager)
+    await handler.handle_connection(websocket, room_uuid, token)
 
 
 def create_ssl_context():

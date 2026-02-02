@@ -18,7 +18,6 @@ from agent_comm_core.models.meeting import (
     MeetingParticipantCreate,
 )
 
-
 T = TypeVar("T")
 CreateT = TypeVar("CreateT")
 
@@ -31,7 +30,7 @@ class BaseRepository(ABC, Generic[T, CreateT]):
     """
 
     @abstractmethod
-    async def get_by_id(self, id: UUID) -> Optional[T]:
+    async def get_by_id(self, id: UUID) -> T | None:
         """
         Retrieve an entity by its ID.
 
@@ -57,7 +56,7 @@ class BaseRepository(ABC, Generic[T, CreateT]):
         pass
 
     @abstractmethod
-    async def update(self, id: UUID, data: dict) -> Optional[T]:
+    async def update(self, id: UUID, data: dict) -> T | None:
         """
         Update an existing entity.
 
@@ -119,8 +118,8 @@ class CommunicationRepository(BaseRepository[Communication, CommunicationCreate]
     @abstractmethod
     async def get_by_agents(
         self,
-        from_agent: Optional[str] = None,
-        to_agent: Optional[str] = None,
+        from_agent: str | None = None,
+        to_agent: str | None = None,
         limit: int = 100,
     ) -> list[Communication]:
         """
@@ -209,7 +208,7 @@ class MeetingRepository(BaseRepository[Meeting, MeetingCreate]):
         pass
 
     @abstractmethod
-    async def update_status(self, meeting_id: UUID, status: str) -> Optional[Meeting]:
+    async def update_status(self, meeting_id: UUID, status: str) -> Meeting | None:
         """
         Update the status of a meeting.
 
@@ -221,3 +220,20 @@ class MeetingRepository(BaseRepository[Meeting, MeetingCreate]):
             Updated meeting if found, None otherwise
         """
         pass
+
+
+# Import concrete repository implementations
+from agent_comm_core.repositories.agent_api_key import AgentApiKeyRepository
+from agent_comm_core.repositories.chat import ChatRepository
+from agent_comm_core.repositories.project import ProjectRepository
+from agent_comm_core.repositories.user import UserRepository
+
+__all__ = [
+    "BaseRepository",
+    "CommunicationRepository",
+    "MeetingRepository",
+    "UserRepository",
+    "AgentApiKeyRepository",
+    "ProjectRepository",
+    "ChatRepository",
+]
