@@ -14,6 +14,7 @@ The MCP Broker Server is a centralized communication middleware that enables mul
 
 ### Key Features
 
+#### Core Communication Infrastructure
 - **Protocol Registry** - Register and discover communication protocols with JSON Schema validation and version tracking
 - **Session Manager** - Track connected sessions with automatic heartbeat monitoring and stale session detection
 - **Capability Negotiator** - Automatic capability handshake with compatibility matrix computation
@@ -21,9 +22,42 @@ The MCP Broker Server is a centralized communication middleware that enables mul
 - **MCP Tools Interface** - Six standard MCP tools for all broker operations
 - **Storage Layer** - In-memory storage with optional Redis support for distributed deployments
 - **Security Module** - Authentication middleware with token validation and CORS support
-- **Multi-Language Support** - Dashboard UI internationalization with Korean/English language toggle
-- **Project Filtering UI** - Chat-like sidebar for organizing agents by project with real-time filtering
-- **Message History View** - Dedicated message browser with project filtering and detail modal
+
+#### User & Project Management
+- **User Authentication** - Database-backed user authentication with JWT tokens
+  - Public signup endpoint with email verification
+  - Secure password hashing with Argon2
+  - Token refresh mechanism
+  - Profile management
+- **Project Management** - Complete CRUD operations for projects
+  - Owner-based access control
+  - Agent assignment to projects
+  - Project archival functionality
+  - Cascade delete for related data
+- **Agent Management** - Database-backed agent authentication
+  - API key generation and rotation
+  - Token revocation support
+  - Capability tracking
+
+#### Chat & Mediator System
+- **Chat Rooms** - Real-time messaging with WebSocket support
+  - Multi-participant chat rooms
+  - Message history with pagination
+  - Agent and user message support
+  - Project-based organization
+- **Mediator System** - AI-powered chat room moderators
+  - LLM model management (OpenAI, Anthropic)
+  - Prompt library with categories
+  - Auto-trigger and keyword-based activation
+  - Per-mediator configuration
+
+#### Web Dashboard
+- **Multi-Language Support** - Korean/English language toggle
+- **Project Filtering UI** - Chat-like sidebar for project organization
+- **Message History View** - Dedicated message browser with filtering
+- **Mediator Management** - UI for managing models, prompts, and assignments
+- **Settings Page** - User profile and preferences management
+- **Login Page** - Modern authentication interface
 
 ---
 
@@ -31,6 +65,7 @@ The MCP Broker Server is a centralized communication middleware that enables mul
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Standalone Mode](#standalone-mode)
 - [Configuration](#configuration)
 - [API Reference](#api-reference)
 - [MCP Tools](#mcp-tools)
@@ -145,6 +180,50 @@ Configure Claude Code to connect to the MCP Broker:
   }
 }
 ```
+
+---
+
+## Standalone Mode
+
+The Communication Server can run in **standalone mode** without external dependencies like PostgreSQL or Redis. This is ideal for:
+
+- Local development and testing
+- Single-machine deployments
+- Quick prototyping and proof-of-concept projects
+- Resource-constrained environments
+
+### Quick Setup
+
+```bash
+# Copy the standalone configuration
+cp config.standalone.example.json config.json
+
+# Start the server
+source .venv/bin/activate
+python -m communication_server.main
+```
+
+### What's Different in Standalone Mode?
+
+| Feature | Standalone | Production |
+|---------|------------|------------|
+| Database | SQLite (file-based) | PostgreSQL |
+| Concurrency | Limited by SQLite locks | High concurrency |
+| Session Storage | In-memory | Redis |
+| Setup | Zero configuration | Requires external services |
+
+### Full Documentation
+
+For complete standalone mode documentation including:
+
+- Dependencies and system requirements
+- Configuration options
+- Environment variables
+- Startup instructions (direct, uvicorn, systemd)
+- Verification steps
+- Limitations and migration path to production
+
+See [docs/STANDALONE_MODE.md](docs/STANDALONE_MODE.md) for detailed bilingual (Korean/English) documentation.
 
 ---
 
@@ -1013,11 +1092,19 @@ MCP_BROKER_CORS_ORIGINS=https://your-domain.com,https://app.your-domain.com
 
 ## Deployment
 
+### Deployment Modes
+
+Choose the deployment mode that fits your needs:
+
+- **Standalone Mode**: Zero configuration, uses SQLite, ideal for development and testing. See [docs/STANDALONE_MODE.md](docs/STANDALONE_MODE.md)
+- **Production Mode**: Full deployment with PostgreSQL and Redis for high availability
+
 ### Cloud Platform Guides
 
 - [Oracle Cloud Infrastructure (OCI) Deployment Guide](docs/OCI_DEPLOYMENT.md) - Complete guide for deploying on OCI VM instances with Oracle Linux
 - [General Deployment Guide](docs/deployment.md) - Platform-agnostic deployment instructions
 - [SSL/TLS Setup Guide](docs/SSL_SETUP.md) - SSL certificate configuration for production
+- [Installation Guide](docs/INSTALLATION.md) - Complete installation and setup guide (Korean)
 
 ### Docker Deployment
 

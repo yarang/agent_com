@@ -6,6 +6,7 @@ Run the server using: python -m mcp_broker
 
 import argparse
 import asyncio
+import os
 import sys
 from typing import Any
 
@@ -171,6 +172,18 @@ async def _main_async() -> int:
     setup_logging(level=config.get_log_level(), format_type=config.get_log_format())
     logger = get_logger(__name__)
 
+    # Run security validation at startup
+    from mcp_broker.core.security import validate_startup_security
+
+    # Check for agent token
+    agent_token = config.authentication.api_token.value
+
+    if not agent_token:
+        agent_token = os.getenv("AGENT_TOKEN", "")
+
+    # Run security checks
+    validate_startup_security(token=agent_token)
+
     # Log startup configuration
     logger.info("Starting MCP Broker Server")
     logger.info(f"Host: {config.server.host}")
@@ -180,13 +193,6 @@ async def _main_async() -> int:
     logger.info(f"Agent nickname: {config.agent.nickname}")
     logger.info(f"Agent project ID: {config.agent.project_id}")
     logger.info(f"Communication Server: {config.communication_server.url}")
-
-    # Check for agent token
-    agent_token = config.authentication.api_token.value
-    import os
-
-    if not agent_token:
-        agent_token = os.getenv("AGENT_TOKEN", "")
 
     if not agent_token:
         logger.warning(

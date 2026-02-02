@@ -1,0 +1,75 @@
+{
+  "_comment": "Standalone mode configuration for Communication Server",
+  "_comment_usage": "Copy this file to config.json and modify as needed",
+  "_comment_database": "Uses SQLite for standalone operation without external database",
+  "version": "1.0.0",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8001,
+    "ssl": {
+      "enabled": false,
+      "cert_path": "./certificates/cert.pem",
+      "key_path": "./certificates/key.pem",
+      "provider": "self-signed",
+      "letsencrypt": {
+        "email": "",
+        "domain": "",
+        "staging": false
+      }
+    },
+    "cors": {
+      "origins": [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://localhost:8001"
+      ],
+      "allow_credentials": true
+    }
+  },
+  "database": {
+    "_comment": "SQLite database for standalone mode - file will be created automatically",
+    "_comment_production": "For production, use: postgresql+asyncpg://user:pass@host/dbname",
+    "url": "sqlite+aiosqlite:///./agent_comm.db",
+    "pool_size": 5,
+    "max_overflow": 10
+  },
+  "authentication": {
+    "_comment_warning": "Change these secrets for production deployment!",
+    "jwt": {
+      "_comment_generate": "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(32))\"",
+      "secret_key": "dev-secret-key-32-chars-long-min",
+      "algorithm": "HS256",
+      "access_token_expire_minutes": 15,
+      "refresh_token_expire_days": 7
+    },
+    "api_token": {
+      "_comment_generate": "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\"",
+      "prefix": "agent_",
+      "secret": "dev-api-token-secret-32-chars-min"
+    }
+  },
+  "security": {
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 60
+    },
+    "headers": {
+      "enabled": true
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "json"
+  },
+  "agent": {
+    "_comment": "Default agent configuration for standalone mode",
+    "nickname": "StandaloneAgent",
+    "project_id": "standalone",
+    "capabilities": []
+  },
+  "communication_server": {
+    "_comment": "URL for agents to connect to this server",
+    "url": "http://localhost:8001",
+    "timeout": 30
+  }
+}

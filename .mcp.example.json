@@ -1,0 +1,27 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/.mcp.schema.json",
+  "mcpServers": {
+    "agent-comm": {
+      "$comment": "AI Agent Communication System MCP Broker - Claude Code 간 통신 지원",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/path/to/your/project",
+        "run",
+        "mcp-broker"
+      ],
+      "env": {
+        "AGENT_TOKEN": "your-agent-token-here",
+        "AGENT_NICKNAME": "your-agent-nickname",
+        "AGENT_PROJECT_ID": "default",
+        "COMMUNICATION_SERVER_URL": "http://localhost:8000",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "staggeredStartup": {
+    "enabled": true,
+    "delayMs": 500,
+    "connectionTimeout": 15000
+  }
+}

@@ -183,6 +183,114 @@ Six standard MCP tools for broker operations:
 
 ### Added
 
+#### User Management System (SPEC-FULL-001)
+- **Database-Persistent User Authentication**
+  - Public user signup endpoint with database persistence
+  - Argon2 password hashing for secure storage
+  - JWT token generation and validation
+  - Token refresh mechanism with automatic handling
+  - Email uniqueness validation
+  - Username validation (min 3 characters)
+  - Password strength requirements (min 12 characters)
+
+- **Project Management with Database Persistence**
+  - Complete CRUD operations for projects
+  - Owner-based access control
+  - Project archival functionality
+  - Cascade delete for related data
+  - Agent assignment to projects
+  - Project-based agent filtering
+
+- **Agent Management System**
+  - Agent API key generation and storage
+  - Database-backed agent authentication
+  - Token rotation functionality
+  - Token revocation support
+  - Agent-to-project association
+  - Capability tracking per agent
+
+- **Chat Room System**
+  - Real-time messaging with WebSocket support
+  - Multi-participant chat rooms
+  - Message history with pagination
+  - Agent and user message support
+  - Project-based chat room organization
+  - Participant management
+
+#### Mediator System (SPEC-MEDIATOR-001)
+- **LLM Model Management**
+  - Support for OpenAI models (GPT-4, GPT-4 Turbo, GPT-3.5 Turbo)
+  - Support for Anthropic models (Claude 3 Opus, Sonnet, Haiku)
+  - Model provider abstraction layer
+  - API endpoint configuration per model
+  - Streaming support indicators
+  - Cost tracking per 1K tokens
+
+- **Mediator Prompt Management**
+  - Prompt library with categories (moderator, summarizer, facilitator, translator)
+  - System prompt editor with variable support
+  - Few-shot examples storage
+  - Public/private prompt visibility
+  - Prompt duplication functionality
+  - Category-based filtering
+
+- **Chat Room Mediator Assignment**
+  - One-to-many mediator-to-room assignments
+  - Per-mediator prompt override
+  - Auto-trigger and keyword-based triggering
+  - Manual trigger via API
+  - Active/inactive mediator states
+  - Configuration temperature and max_tokens settings
+
+- **LLM Provider Integration**
+  - OpenAI API integration
+  - Anthropic API integration
+  - Extensible provider interface
+  - Error handling and retry logic
+
+#### Complete UI System (SPEC-UI-001)
+- **Login Page**
+  - Clean, modern login interface
+  - User signup with validation
+  - Secure password input
+  - Error message display
+  - Responsive design
+  - Auto-redirect after login
+
+- **Mediator Management UI**
+  - Models section with provider badges
+  - Prompts section with category filtering
+  - Active mediators section
+  - Create/Edit mediator modals
+  - Prompt editor with syntax highlighting
+  - Configuration JSON editor
+  - Real-time status updates
+
+- **Settings Page**
+  - User profile management
+  - Password change functionality
+  - Project management interface
+  - Agent key management
+  - Preference settings
+  - Account deletion
+
+- **Foundation JavaScript Modules**
+  - `router.js` - SPA routing with hash-based navigation
+  - `auth.js` - Authentication manager with token refresh
+  - `websocket.js` - WebSocket connection management with auto-reconnect
+  - `api.js` - Complete API client with error handling
+  - `login.js` - Login page logic
+  - `settings.js` - Settings page management
+  - `mediators.js` - Mediator management interface
+
+- **CSS Styling System**
+  - `mediators.css` - 767 lines of mediator-specific styles
+  - `settings.css` - 963 lines of settings-specific styles
+  - Design token system with CSS variables
+  - Responsive layout utilities
+  - Modal component styles
+  - Form validation styles
+
 #### Dashboard Features
 - **Multi-Language Support (SPEC-UI-I18N-001)** - Dashboard UI internationalization
   - Language toggle component in dashboard header (Korean/English)
@@ -215,36 +323,164 @@ Six standard MCP tools for broker operations:
   - Timestamp formatting and display
 
 #### New API Endpoints
+
+**Authentication:**
+- `POST /api/v1/auth/signup` - Public user registration
+- `POST /api/v1/auth/login` - User login with JWT tokens
+- `POST /api/v1/auth/logout` - Token revocation
+- `POST /api/v1/auth/refresh` - Token refresh
+- `GET /api/v1/auth/me` - Current user info
+- `PUT /api/v1/auth/me` - Update profile
+- `POST /api/v1/auth/change-password` - Password change
+
+**Projects:**
+- `GET /api/v1/projects` - List user's projects
+- `POST /api/v1/projects` - Create new project
+- `GET /api/v1/projects/{id}` - Get project details
+- `PUT /api/v1/projects/{id}` - Update project
+- `DELETE /api/v1/projects/{id}` - Delete project
+- `POST /api/v1/projects/{id}/archive` - Archive project
+
+**Agents:**
+- `GET /api/v1/agents` - List user's agents
+- `POST /api/v1/agents` - Create new agent
+- `GET /api/v1/agents/{id}` - Get agent details
+- `PUT /api/v1/agents/{id}` - Update agent
+- `DELETE /api/v1/agents/{id}` - Delete agent
+- `POST /api/v1/agents/{id}/revoke` - Revoke agent token
+- `POST /api/v1/agents/{id}/rotate` - Rotate agent token
+
+**Chat Rooms:**
+- `GET /api/v1/chat/rooms` - List chat rooms
+- `POST /api/v1/chat/rooms` - Create chat room
+- `GET /api/v1/chat/rooms/{id}` - Get room details
+- `PUT /api/v1/chat/rooms/{id}` - Update room
+- `DELETE /api/v1/chat/rooms/{id}` - Delete room
+- `GET /api/v1/chat/rooms/{id}/messages` - Get messages
+- `POST /api/v1/chat/rooms/{id}/messages` - Send message
+- `POST /api/v1/chat/rooms/{id}/participants` - Add participant
+- `DELETE /api/v1/chat/rooms/{id}/participants/{id}` - Remove participant
+
+**Mediators:**
+- `GET /api/v1/mediator-models` - List available models
+- `GET /api/v1/mediator-models/{id}` - Get model details
+- `POST /api/v1/mediator-models` - Create custom model (admin)
+- `GET /api/v1/mediator-prompts` - List prompts
+- `POST /api/v1/mediator-prompts` - Create prompt
+- `GET /api/v1/mediator-prompts/{id}` - Get prompt details
+- `PUT /api/v1/mediator-prompts/{id}` - Update prompt
+- `DELETE /api/v1/mediator-prompts/{id}` - Delete prompt
+- `GET /api/v1/mediator-prompts/categories` - List prompt categories
+- `POST /api/v1/mediator-prompts/{id}/duplicate` - Duplicate prompt
+- `GET /api/v1/mediators` - List mediators
+- `POST /api/v1/mediators` - Create mediator
+- `GET /api/v1/mediators/{id}` - Get mediator details
+- `PUT /api/v1/mediators/{id}` - Update mediator
+- `DELETE /api/v1/mediators/{id}` - Delete mediator
+
+**Chat Room Mediators:**
+- `GET /api/v1/chat/rooms/{id}/mediators` - List room mediators
+- `POST /api/v1/chat/rooms/{id}/mediators` - Add mediator to room
+- `PUT /api/v1/chat/rooms/{id}/mediators/{mid}` - Update room mediator config
+- `DELETE /api/v1/chat/rooms/{id}/mediators/{mid}` - Remove mediator from room
+- `POST /api/v1/chat/rooms/{id}/mediators/{mid}/trigger` - Manually trigger mediator
+
+**I18n:**
 - `GET /api/v1/i18n/languages` - List supported languages
 - `GET /api/v1/i18n/{language}` - Get translation resources
+
+**Projects:**
 - `GET /api/v1/projects` - List projects with agent counts
 - `GET /api/v1/projects/{project_id}/agents` - Get agents by project
+
+**Messages:**
 - `GET /api/v1/messages` - List messages with filtering
 - `GET /api/v1/messages/{message_id}` - Get message details
 
-#### New JavaScript Modules
-- `static/js/i18n.js` - I18n manager for language handling
-- `static/js/projects.js` - Project sidebar component
-- `static/js/messages.js` - Message history component
+#### Database Schema
+- **users** table with email uniqueness and password hashing
+- **projects** table with owner foreign key and timestamps
+- **agent_api_keys** table with project association
+- **chat_rooms** table with project association
+- **chat_participants** table for room membership
+- **chat_messages** table for message storage
+- **mediators** table for mediator configuration
+- **mediator_models** table for LLM model definitions
+- **mediator_prompts** table for prompt templates
+- **chat_room_mediators** junction table for assignments
+
+#### New JavaScript Modules (15 files total)
+- `static/js/router.js` - SPA routing system (384 lines)
+- `static/js/auth.js` - Authentication manager (482 lines)
+- `static/js/websocket.js` - WebSocket manager (628 lines)
+- `static/js/api.js` - Complete API client (437 lines)
+- `static/js/login.js` - Login page logic (474 lines)
+- `static/js/settings.js` - Settings page (762 lines)
+- `static/js/mediators.js` - Mediator management (1056 lines)
+- `static/js/i18n.js` - I18n manager
+- `static/js/projects.js` - Project sidebar
+- `static/js/messages.js` - Message history
+- `static/js/dashboard.js` - Main dashboard
+- `static/js/project-chat.js` - Chat functionality
+- `static/js/project-management.js` - Project management
+- `static/js/charts.js` - Data visualization
+- `static/js/timeline.js` - Timeline display
+
+#### New HTML Pages
+- `login.html` - User authentication page (571 lines)
+- `mediators.html` - Mediator management interface (339 lines)
+- `settings.html` - User settings page (592 lines)
+- `mission-control.html` - Enhanced mission control
+- `index.html` - Updated dashboard
+
+#### New CSS Files (4 files)
+- `css/mediators.css` - Mediator-specific styles (767 lines)
+- `css/settings.css` - Settings-specific styles (963 lines)
+- `css/styles.css` - Updated with design tokens (27 new lines)
+- Foundation styles for modals, forms, and layouts
 
 #### New Data Models
-- `TranslationResource` - I18n translation model
-- `LanguageInfo` - Language metadata model
-- `MessageListItem` - Message list view model
-- `MessageDetail` - Full message detail model
+- `UserDB`, `UserCreate`, `UserUpdate` - User management
+- `ProjectDB`, `ProjectCreate`, `ProjectUpdate` - Project management
+- `AgentApiKeyDB`, `AgentCreate` - Agent authentication
+- `ChatRoomDB`, `ChatRoomCreate` - Chat room management
+- `ChatMessageDB`, `ChatMessageCreate` - Message storage
+- `MediatorDB`, `MediatorCreate` - Mediator configuration
+- `MediatorModelDB`, `MediatorModelCreate` - LLM models
+- `MediatorPromptDB`, `MediatorPromptCreate` - Prompt templates
+- `ChatRoomMediatorDB` - Room-mediator relationships
 
 #### Translation Files
-- `i18n/ko.json` - Korean translations
-- `i18n/en.json` - English translations
+- `i18n/ko.json` - Korean translations (81 entries)
+- `i18n/en.json` - English translations (81 entries)
+
+#### WebSocket Events
+- `chat.message` - New message broadcast
+- `chat.participant_joined` - Participant joined notification
+- `chat.participant_left` - Participant left notification
+- `chat.typing` - Typing indicator
+- `agent.status_update` - Agent status changes
+- `project.update` - Project data updates
 
 ### Changed
 
 #### Core Models
 - `AgentInfo` model now includes `project_id` field for project association
 - `AgentRegistry` service extended with project-related methods
+- User authentication migrated from in-memory to database
+- Agent authentication migrated from in-memory to database
 
 #### API Integration
 - Status API supports optional `project_id` query parameter for filtering
+- All CRUD operations now use database persistence
+- WebSocket manager with auto-reconnect and error handling
+
+#### Security
+- Argon2 password hashing for user passwords
+- JWT token validation with refresh mechanism
+- SHA-256 hashing for API tokens
+- Owner-based access control for projects
+- Participant-based access control for chat rooms
 
 ### Changed
 - **Multi-Project Support** - Project isolation and cross-project communication

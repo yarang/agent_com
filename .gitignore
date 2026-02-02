@@ -117,6 +117,12 @@ config.json
 config.local.json
 !config.local.json.example
 
+# MCP Configuration with sensitive tokens
+.mcp.json
+.mcp.local.json
+!.mcp.example.json
+!config.mcp.example.json
+
 # Certificate files
 *.pem
 *.p12
