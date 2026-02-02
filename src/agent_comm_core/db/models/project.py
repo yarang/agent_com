@@ -2,11 +2,11 @@
 Project database model for multi-tenancy support.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -82,8 +82,8 @@ class ProjectDB(Base):
         default=False,
     )
 
-    # Metadata (JSONB for flexibility)
-    metadata: Mapped[dict | None] = mapped_column(
+    # Settings (JSONB for flexibility)
+    settings: Mapped[dict | None] = mapped_column(
         JSONB,
         nullable=True,
         default=None,
@@ -92,13 +92,12 @@ class ProjectDB(Base):
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=lambda: datetime.now(UTC),
+        server_default=func.now(),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
+        server_default=func.now(),
         nullable=False,
     )
 
@@ -106,9 +105,7 @@ class ProjectDB(Base):
     owner = relationship("UserDB", backref="projects")
 
     # Constraints
-    __table_args__ = (
-        UniqueConstraint("owner_id", "project_id", name="uq_owner_project_id"),
-    )
+    __table_args__ = (UniqueConstraint("owner_id", "project_id", name="uq_owner_project_id"),)
 
     def __repr__(self) -> str:
         return f"<ProjectDB(id={self.id}, project_id={self.project_id}, owner_id={self.owner_id})>"

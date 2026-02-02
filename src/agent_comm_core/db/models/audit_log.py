@@ -2,12 +2,12 @@
 Audit Log database model for immutable security event tracking.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -143,7 +143,7 @@ class AuditLogDB(Base):
     # Timestamp
     occurred_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=lambda: datetime.now(UTC),
+        server_default=func.now(),
         nullable=False,
         index=True,
     )

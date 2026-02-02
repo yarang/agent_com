@@ -271,7 +271,7 @@ class TestTokenVerificationCharacterization:
         token = jwt.encode(
             expired_payload,
             os.environ["JWT_SECRET_KEY"],
-            algorithms=[os.getenv("JWT_ALGORITHM", "HS256")],
+            algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
         )
 
         # Document current behavior

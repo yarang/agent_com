@@ -2,11 +2,11 @@
 User database model for OAuth-based human accounts.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, String, Text
+from sqlalchemy import Boolean, DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -94,13 +94,12 @@ class UserDB(Base):
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=lambda: datetime.now(UTC),
+        server_default=func.now(),
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        server_default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
+        server_default=func.now(),
         nullable=False,
     )
 
