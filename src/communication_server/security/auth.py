@@ -434,8 +434,21 @@ class AuthService:
                 user_db = default_user.scalar_one_or_none()
 
                 if not user_db:
-                    # No admin user exists, can't create project
-                    raise ValueError("No project found and no admin user to create default project")
+                    # No admin user exists, create a default one for system agents
+                    # This allows agent token creation to work in fresh installations
+                    from datetime import datetime
+
+                    user_db = UserDB(
+                        username="admin",
+                        email="admin@localhost",
+                        password_hash=self._hash_password(
+                            "DefaultPassword123!"
+                        ),  # User should change this
+                        role=UserRole.ADMIN.value,
+                        permissions=["*"],
+                    )
+                    session.add(user_db)
+                    await session.flush()
 
                 project_db = ProjectDB(
                     id=project_uuid,
