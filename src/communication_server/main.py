@@ -5,6 +5,7 @@ Provides REST API and WebSocket endpoints for agent communication,
 meeting management, and sequential discussion coordination.
 """
 
+import os
 import ssl
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -37,7 +38,8 @@ from communication_server.websocket.handler import WebSocketHandler
 from communication_server.websocket.manager import ConnectionManager
 
 # Load configuration
-config_loader = ConfigLoader()
+config_path = os.getenv("CONFIG_PATH")
+config_loader = ConfigLoader(config_path=Path(config_path)) if config_path else ConfigLoader()
 config: Config = config_loader.load()
 
 
