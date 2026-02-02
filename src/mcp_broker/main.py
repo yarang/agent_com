@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI) -> Any:
 
     # Setup
     _global_config = get_config_legacy()
-    setup_logging(level=_global_config.log_level, log_format=_global_config.log_format)
+    setup_logging(level=_global_config.log_level, format_type=_global_config.log_format)
 
     logger = get_logger(__name__)
     logger.info("Starting MCP Broker Server (FastAPI mode)")
