@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from mcp_broker.core.config import BrokerConfig, get_config
+from mcp_broker.core.config import BrokerConfig, get_config_legacy
 from mcp_broker.core.logging import get_logger, setup_logging
 from mcp_broker.core.security import SecurityMiddleware
 from mcp_broker.mcp.server import MCPServer
@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI) -> Any:
     global _broker_server, _global_config
 
     # Setup
-    _global_config = get_config()
+    _global_config = get_config_legacy()
     setup_logging(level=_global_config.log_level, log_format=_global_config.log_format)
 
     logger = get_logger(__name__)

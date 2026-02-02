@@ -4,7 +4,7 @@
 
 [![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
-[![Development Status](https://img.shields.io/badge/status-alpha-orange.svg)](https://github.com/moai/mcp-broker-server)
+[![Development Status](https://img.shields.io/badge/status-alpha-orange.svg)](https://github.com/yarang/agent_com)
 
 ---
 
@@ -55,8 +55,8 @@ The MCP Broker Server is a centralized communication middleware that enables mul
 
 ```bash
 # Clone the repository
-git clone https://github.com/moai/mcp-broker-server.git
-cd mcp-broker-server
+git clone git@github.com:yarang/agent_com.git
+cd agent_com
 
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -1126,7 +1126,7 @@ tail -f logs/mcp-broker.log
 
 - Check the [API documentation](docs/api.md)
 - Review [architecture docs](docs/architecture.md)
-- Open an issue on [GitHub](https://github.com/moai/mcp-broker-server/issues)
+- Open an issue on [GitHub](https://github.com/yarang/agent_com/issues)
 
 ---
 
@@ -1167,6 +1167,6 @@ Apache License 2.0 - see [LICENSE](LICENSE) for details.
 - [Documentation](docs/)
 - [API Reference](docs/api.md)
 - [Architecture](docs/architecture.md)
-- [GitHub Repository](https://github.com/moai/mcp-broker-server)
-- [Issue Tracker](https://github.com/moai/mcp-broker-server/issues)
+- [GitHub Repository](https://github.com/yarang/agent_com)
+- [Issue Tracker](https://github.com/yarang/agent_com/issues)
 - [MCP Specification](https://modelcontextprotocol.io/)

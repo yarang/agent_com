@@ -181,10 +181,10 @@ cd /opt/agent-comm
 
 ```bash
 # Clone repository (replace with your repo URL)
-git clone https://github.com/your-username/agent_com.git .
+git clone git@github.com:yarang/agent_com.git .
 
 # Or using SSH
-# git clone git@github.com:your-username/agent_com.git .
+# git clone git@github.com:yarang/agent_com.git .
 
 # Checkout specific branch if needed
 # git checkout main
@@ -294,7 +294,7 @@ sudo certbot renew --dry-run
 sudo tee /etc/systemd/system/agent-comm.service > /dev/null << 'EOF'
 [Unit]
 Description=Agent Communication Server
-Documentation=https://github.com/your-username/agent_com
+Documentation=https://github.com/yarang/agent_com
 After=network.target postgresql.service docker.service
 Wants=postgresql.service
 
@@ -661,7 +661,7 @@ sudo ./scripts/install-ubuntu.sh
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Nginx Documentation](https://nginx.org/en/docs/)
 - [Let's Encrypt Documentation](https://letsencrypt.org/docs/)
-- [Project Repository](https://github.com/your-username/agent_com)
+- [Project Repository](https://github.com/yarang/agent_com)
 
 ---
 

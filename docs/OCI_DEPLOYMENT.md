@@ -379,7 +379,7 @@ sudo firewall-cmd --reload
 cd /opt/agent-comm
 
 # Clone repository (replace with your repo URL)
-git clone https://github.com/your-username/agent_com.git .
+git clone git@github.com:yarang/agent_com.git .
 
 # Or if using a specific branch
 git clone -b main https://github.com/your-username/agent_com.git .
@@ -624,7 +624,7 @@ Paste the following content:
 ```ini
 [Unit]
 Description=Agent Communication Server
-Documentation=https://github.com/your-username/agent_com
+Documentation=https://github.com/yarang/agent_com
 After=network.target postgresql.service docker.service
 Wants=postgresql.service
 
@@ -1738,7 +1738,7 @@ curl -f http://localhost:8001/health
 - [Oracle Linux Documentation](https://docs.oracle.com/en-us/operating-systems/oracle-linux/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Nginx Documentation](https://nginx.org/en/docs/)
-- [Project Repository](https://github.com/your-username/agent_com)
+- [Project Repository](https://github.com/yarang/agent_com)
 
 ### Useful OCI CLI Commands
 

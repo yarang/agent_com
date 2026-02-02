@@ -59,9 +59,9 @@ mcp-broker = "mcp_broker.__main__:run_sync"
 agent-comm-server = "communication_server.main:main"
 
 [project.urls]
-Homepage = "https://github.com/moai/mcp-broker-server"
-Documentation = "https://github.com/moai/mcp-broker-server#readme"
-Repository = "https://github.com/moai/mcp-broker-server"
+Homepage = "https://github.com/yarang/agent_com"
+Documentation = "https://github.com/yarang/agent_com#readme"
+Repository = "https://github.com/yarang/agent_com"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agent_comm_core", "src/communication_server", "src/mcp_broker"]

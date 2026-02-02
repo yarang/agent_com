@@ -13,7 +13,7 @@
 Description=MCP Broker Server for inter-Claude Code communication
 After=network-online.target
 Wants=network-online.target
-Documentation=https://github.com/moai/mcp-broker-server
+Documentation=https://github.com/yarang/agent_com
 
 [Service]
 Type=simple

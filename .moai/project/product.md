@@ -10,7 +10,7 @@ MCP Broker Server - Product documentation
 **Version:** 1.0.0
 **Status:** Alpha
 **License:** Apache-2.0
-**Repository:** https://github.com/moai/mcp-broker-server
+**Repository:** https://github.com/yarang/agent_com
 
 ---
 

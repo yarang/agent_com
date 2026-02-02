@@ -286,6 +286,6 @@ Six standard MCP tools for broker operations:
 
 ## Links
 
-- [GitHub Repository](https://github.com/moai/mcp-broker-server)
-- [Issue Tracker](https://github.com/moai/mcp-broker-server/issues)
+- [GitHub Repository](https://github.com/yarang/agent_com)
+- [Issue Tracker](https://github.com/yarang/agent_com/issues)
 - [MCP Specification](https://modelcontextprotocol.io/)

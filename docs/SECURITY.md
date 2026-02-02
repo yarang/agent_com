@@ -1,11 +1,45 @@
-# Security Authentication System
+# 보안 인증 시스템
 
-## Overview
+**버전:** 1.0.0
+**최종 업데이트:** 2026-02-02
+**플랫폼:** Multi-Agent Communication Platform
 
-The AI Agent Communication System implements a dual authentication strategy:
+---
 
-- **Dashboard Users**: JWT-based authentication with access/refresh tokens
-- **Agents**: API token-based authentication with bearer tokens
+## 개요
+
+AI Agent Communication System은 이중 인증 전략을 구현합니다:
+
+- **대시보드 사용자**: JWT 기반 인증 (access/refresh 토큰)
+- **에이전트**: API 토큰 기반 인증 (bearer 토큰)
+
+### 보안 아키텍처
+
+```mermaid
+graph TB
+    subgraph "인증 계층"
+        JWT[JWT 인증]
+        API[API 토큰 인증]
+    end
+
+    subgraph "사용자 유형"
+        DASH[대시보드 사용자]
+        AGENT[에이전트]
+    end
+
+    subgraph "보안 계층"
+        RBAC[RBAC]
+        CAP[Capability 기반 제어]
+        AUDIT[감사 로그]
+    end
+
+    DASH --> JWT
+    AGENT --> API
+    JWT --> RBAC
+    API --> CAP
+    RBAC --> AUDIT
+    CAP --> AUDIT
+```
 
 ## Architecture
 
