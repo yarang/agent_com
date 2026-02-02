@@ -15,6 +15,25 @@ if ! uv run python -c "import agent_comm_core" 2>/dev/null; then
 fi
 echo ""
 
+# 서버 IP 주소 감지
+echo "서버 네트워크 정보 확인 중..."
+# 로컬이 아닌 외부 연결 가능한 IP 주소 찾기
+SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [ -z "$SERVER_IP" ] || [ "$SERVER_IP" = "127.0.0.1" ]; then
+    # Linux에서 외부 IP 찾기
+    SERVER_IP=$(ip route get 1 2>/dev/null | awk '{print $7}' | head -1)
+fi
+if [ -z "$SERVER_IP" ] || [ "$SERVER_IP" = "127.0.0.1" ]; then
+    # macOS에서 외부 IP 찾기
+    SERVER_IP=$(ifconfig 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | head -1)
+fi
+# 기본값 설정
+if [ -z "$SERVER_IP" ]; then
+    SERVER_IP="0.0.0.0"
+fi
+echo "   감지된 IP: $SERVER_IP"
+echo ""
+
 # 기존 프로세스 정리
 echo "기존 프로세스 확인 중..."
 pkill -f "communication_server.main" 2>/dev/null && echo "  기존 Communication Server 중지됨" || true
@@ -47,14 +66,18 @@ echo "=========================================="
 echo "✅ 모든 서버가 시작되었습니다"
 echo "=========================================="
 echo ""
-echo "Communication Server: http://localhost:8000"
-echo "  - Dashboard: http://localhost:8000/"
-echo "  - API Docs: http://localhost:8000/docs"
-echo "  - WebSocket: ws://localhost:8000/ws"
+echo "Communication Server:"
+echo "  - Local: http://localhost:8000"
+echo "  - External: http://$SERVER_IP:8000"
+echo "  - Dashboard: http://$SERVER_IP:8000/"
+echo "  - API Docs: http://$SERVER_IP:8000/docs"
+echo "  - WebSocket: ws://$SERVER_IP:8000/ws"
 echo ""
-echo "MCP Broker Server: http://localhost:8001"
-echo "  - Health: http://localhost:8001/health"
-echo "  - API Docs: http://localhost:8001/docs"
+echo "MCP Broker Server:"
+echo "  - Local: http://localhost:8001"
+echo "  - External: http://$SERVER_IP:8001"
+echo "  - Health: http://$SERVER_IP:8001/health"
+echo "  - API Docs: http://$SERVER_IP:8001/docs"
 echo ""
 echo "로그 파일:"
 echo "  - Communication Server: /tmp/comm_server.log"
