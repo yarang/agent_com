@@ -16,6 +16,7 @@ from pydantic import ValidationError
 
 from agent_comm_core.config import get_config
 from agent_comm_core.db.database import db_session
+from agent_comm_core.db.models.user import UserDB
 from agent_comm_core.models.auth import Agent, User, UserRole
 from agent_comm_core.repositories import UserRepository
 from communication_server.security.tokens import (
