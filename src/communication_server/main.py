@@ -178,6 +178,39 @@ async def root():
     )
 
 
+@app.get("/mission-control.html")
+async def mission_control():
+    """Serve Mission Control page."""
+    from fastapi.responses import FileResponse
+
+    file_path = static_dir / "mission-control.html"
+    if file_path.exists():
+        return FileResponse(str(file_path))
+    return JSONResponse(status_code=404, content={"error": "Mission Control page not found"})
+
+
+@app.get("/mediators.html")
+async def mediators():
+    """Serve Mediators management page."""
+    from fastapi.responses import FileResponse
+
+    file_path = static_dir / "mediators.html"
+    if file_path.exists():
+        return FileResponse(str(file_path))
+    return JSONResponse(status_code=404, content={"error": "Mediators page not found"})
+
+
+@app.get("/settings.html")
+async def settings():
+    """Serve Settings page."""
+    from fastapi.responses import FileResponse
+
+    file_path = static_dir / "settings.html"
+    if file_path.exists():
+        return FileResponse(str(file_path))
+    return JSONResponse(status_code=404, content={"error": "Settings page not found"})
+
+
 @app.websocket("/ws/meetings/{meeting_id}")
 async def websocket_meeting_endpoint(
     websocket: WebSocket, meeting_id: str, token: str | None = None
