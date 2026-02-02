@@ -1,7 +1,9 @@
 #!/bin/bash
 # 두 서버를 동시에 시작하는 스크립트
 
-PROJECT_DIR="/Users/yarang/works/agent_dev/agent_com"
+# 스크립트 위치 기준으로 프로젝트 디렉토리 설정
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR"
 cd "$PROJECT_DIR"
 
 # 기존 프로세스 정리
