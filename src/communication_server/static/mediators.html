@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediator Management - AI Agent Communication System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/mediators.css">
+</head>
+<body class="mediators-body">
+    <!-- Background gradient -->
+    <div class="bg-gradient"></div>
+    <div class="bg-pattern"></div>
+
+    <div class="mediators-container">
+        <!-- Header -->
+        <header class="mediators-header">
+            <div class="header-left">
+                <div class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="3"/>
+                        <circle cx="16" cy="16" r="6" fill="currentColor"/>
+                        <circle cx="24" cy="10" r="4" fill="currentColor" opacity="0.6"/>
+                        <circle cx="8" cy="24" r="3" fill="currentColor" opacity="0.4"/>
+                    </svg>
+                </div>
+                <div class="header-title">
+                    <h1>Mediator Management</h1>
+                    <span>Manage AI mediators for chat rooms</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <nav class="header-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="mission-control.html" class="nav-link">Mission Control</a>
+                    <a href="mediators.html" class="nav-link active">Mediators</a>
+                    <a href="settings.html" class="nav-link">Settings</a>
+                </nav>
+                <div class="project-selector">
+                    <label for="projectSelect">Project:</label>
+                    <select id="projectSelect" class="select-filter">
+                        <option value="">Select project...</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" id="createMediatorBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <span>Create Mediator</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="mediators-main">
+            <!-- Models Section -->
+            <section class="mediators-section models-section" id="modelsSection">
+                <div class="section-header">
+                    <div class="section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                            <line x1="8" y1="21" x2="16" y2="21"/>
+                            <line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                        <h2>LLM Models</h2>
+                    </div>
+                    <div class="section-actions">
+                        <select id="modelProviderFilter" class="select-filter">
+                            <option value="">All Providers</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="google">Google</option>
+                        </select>
+                        <button class="btn-icon" id="refreshModelsBtn" title="Refresh">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div class="models-grid" id="modelsGrid">
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Loading models...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prompts Section -->
+            <section class="mediators-section prompts-section" id="promptsSection">
+                <div class="section-header">
+                    <div class="section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        <h2>Prompts Library</h2>
+                    </div>
+                    <div class="section-actions">
+                        <select id="promptCategoryFilter" class="select-filter">
+                            <option value="">All Categories</option>
+                            <option value="system">System</option>
+                            <option value="facilitation">Facilitation</option>
+                            <option value="analysis">Analysis</option>
+                            <option value="decision">Decision</option>
+                            <option value="moderation">Moderation</option>
+                        </select>
+                        <button class="btn btn-primary" id="createPromptBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            <span>Create Prompt</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div class="prompts-grid" id="promptsGrid">
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Loading prompts...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mediators Section -->
+            <section class="mediators-section mediators-list-section" id="mediatorsSection">
+                <div class="section-header">
+                    <div class="section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <h2>Active Mediators</h2>
+                    </div>
+                    <div class="section-actions">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="showActiveOnly" checked>
+                            <span>Active only</span>
+                        </label>
+                        <button class="btn-icon" id="refreshMediatorsBtn" title="Refresh">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="23 4 23 10 17 10"/>
+                                <polyline points="1 20 1 14 7 14"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="section-content">
+                    <div class="mediators-list" id="mediatorsList">
+                        <div class="loading-state">
+                            <div class="spinner"></div>
+                            <p>Loading mediators...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Mediator Form Modal -->
+    <div class="modal" id="mediatorModal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="mediatorModalTitle">Create Mediator</h3>
+                <button class="btn-close" id="closeMediatorModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="mediatorForm">
+                    <input type="hidden" id="mediatorId">
+
+                    <div class="form-group">
+                        <label for="mediatorName">Name *</label>
+                        <input type="text" id="mediatorName" class="form-control" placeholder="e.g., Helpful Moderator" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mediatorDescription">Description</label>
+                        <textarea id="mediatorDescription" class="form-control" rows="2" placeholder="Describe the mediator's purpose..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mediatorModel">LLM Model *</label>
+                            <select id="mediatorModel" class="form-control" required>
+                                <option value="">Select model...</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mediatorPrompt">Default Prompt</label>
+                            <select id="mediatorPrompt" class="form-control">
+                                <option value="">None (use model default)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mediatorSystemPrompt">System Prompt</label>
+                        <textarea id="mediatorSystemPrompt" class="form-control" rows="4" placeholder="Override the default system prompt..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mediatorTemperature">Temperature</label>
+                            <input type="range" id="mediatorTemperature" class="form-range" min="0" max="2" step="0.1" value="0.7">
+                            <div class="range-value">
+                                <span id="temperatureValue">0.7</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="mediatorMaxTokens">Max Tokens</label>
+                            <input type="number" id="mediatorMaxTokens" class="form-control" value="1000" min="100" max="32000">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="mediatorActive" checked>
+                            <span>Active</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelMediatorBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Mediator</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Form Modal -->
+    <div class="modal" id="promptModal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="promptModalTitle">Create Prompt</h3>
+                <button class="btn-close" id="closePromptModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="promptForm">
+                    <input type="hidden" id="promptId">
+
+                    <div class="form-group">
+                        <label for="promptName">Name *</label>
+                        <input type="text" id="promptName" class="form-control" placeholder="e.g., Helpful Moderator" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="promptDescription">Description</label>
+                        <textarea id="promptDescription" class="form-control" rows="2" placeholder="Describe the prompt's purpose..."></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="promptCategory">Category *</label>
+                            <select id="promptCategory" class="form-control" required>
+                                <option value="">Select category...</option>
+                                <option value="system">System</option>
+                                <option value="facilitation">Facilitation</option>
+                                <option value="analysis">Analysis</option>
+                                <option value="decision">Decision</option>
+                                <option value="moderation">Moderation</option>
+                                <option value="summarization">Summarization</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label" style="margin-top: 24px;">
+                                <input type="checkbox" id="promptPublic">
+                                <span>Public (share across project)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="promptSystemPrompt">System Prompt *</label>
+                        <textarea id="promptSystemPrompt" class="form-control" rows="6" placeholder="You are a helpful chat moderator. Your role is to..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="promptActive" checked>
+                            <span>Active</span>
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelPromptBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Prompt</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Detail Modal -->
+    <div class="modal" id="promptDetailModal" style="display: none;">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="promptDetailTitle">Prompt Details</h3>
+                <button class="btn-close" id="closePromptDetailModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="prompt-detail-content" id="promptDetailContent">
+                    <!-- Content loaded dynamically -->
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="closePromptDetailBtn">Close</button>
+                    <button type="button" class="btn btn-primary" id="duplicatePromptBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Duplicate
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/mediators.js"></script>
+</body>
+</html>

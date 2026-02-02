@@ -94,6 +94,85 @@
   "common": {
     "refresh": "Refresh",
     "loading": "Loading...",
-    "error": "Error"
+    "error": "Error",
+    "back": "Back",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "settings": {
+    "title": "Settings",
+    "nav": {
+      "profile": "Profile",
+      "apiKeys": "API Keys",
+      "appearance": "Appearance",
+      "notifications": "Notifications"
+    },
+    "profile": {
+      "title": "Profile Settings",
+      "description": "Manage your account information and preferences",
+      "avatar": "Avatar",
+      "changeAvatar": "Change",
+      "username": "Username",
+      "usernameHint": "Username cannot be changed",
+      "email": "Email",
+      "emailHint": "Used for account recovery",
+      "role": "Role",
+      "roleHint": "Assigned by administrator",
+      "accountInfo": "Account Information",
+      "userId": "User ID",
+      "createdAt": "Created At",
+      "lastLogin": "Last Login",
+      "save": "Save Changes",
+      "passwordSection": "Password",
+      "currentPassword": "Current Password",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password",
+      "passwordStrength": "Enter a password",
+      "changePassword": "Change Password"
+    },
+    "apiKeys": {
+      "title": "API Keys Configuration",
+      "description": "Configure LLM provider API keys for mediators",
+      "openai": "OpenAI API Key",
+      "openaiDesc": "Used for GPT-4 and other OpenAI models",
+      "anthropic": "Anthropic API Key",
+      "anthropicDesc": "Used for Claude 3 and other Anthropic models",
+      "enterKey": "Enter API Key",
+      "openaiHint": "Store securely in your browser. Never share your API keys.",
+      "anthropicHint": "Store securely in your browser. Never share your API keys.",
+      "save": "Save",
+      "remove": "Remove",
+      "notConfigured": "Not configured",
+      "noticeTitle": "About API Keys",
+      "noticeText": "API keys are stored securely in your browser's localStorage. For production use, configure API keys using environment variables on the server."
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel",
+      "theme": "Theme",
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System",
+      "fontSize": "Font Size",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "compactMode": "Compact Mode",
+      "compactModeDesc": "Reduce spacing for more content density"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Manage how you receive updates",
+      "browser": "Browser Notifications",
+      "browserDesc": "Allow desktop notifications for important events",
+      "sound": "Sound",
+      "soundDesc": "Play sound for new messages",
+      "types": "Notify me about",
+      "newMessages": "New messages",
+      "agentStatus": "Agent status changes",
+      "meetings": "Meeting invites",
+      "decisions": "Decision required",
+      "test": "Test Notification"
+    }
   }
 }

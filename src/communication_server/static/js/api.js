@@ -1007,6 +1007,423 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
+// ==================== Mediator Management API ====================
+
+/**
+ * Fetch mediator models
+ * @param {Object} options - Query options
+ * @param {string} [options.provider] - Filter by provider
+ * @param {boolean} [options.is_active] - Filter by active status
+ * @returns {Promise<Object>} Response with models array
+ */
+async function fetchMediatorModels(options = {}) {
+    const { provider = null, is_active = null } = options;
+    const params = new URLSearchParams();
+    if (provider) params.append('provider', provider);
+    if (is_active !== null) params.append('is_active', is_active);
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/mediator-models?${params}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching mediator models:', error);
+        throw error;
+    }
+}
+
+/**
+ * Create mediator model
+ * @param {Object} modelData - Model data
+ * @returns {Promise<Object>} Response with created model
+ */
+async function createMediatorModel(modelData) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/mediator-models`, {
+            method: 'POST',
+            body: JSON.stringify(modelData),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating mediator model:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update mediator model
+ * @param {string} modelId - Model ID
+ * @param {Object} updates - Model updates
+ * @returns {Promise<Object>} Response with updated model
+ */
+async function updateMediatorModel(modelId, updates) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/mediator-models/${encodeURIComponent(modelId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating mediator model:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete mediator model
+ * @param {string} modelId - Model ID
+ * @returns {Promise<Object>} Response with deletion confirmation
+ */
+async function deleteMediatorModel(modelId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/mediator-models/${encodeURIComponent(modelId)}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting mediator model:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch mediator prompts
+ * @param {string} projectId - Project ID
+ * @param {Object} options - Query options
+ * @param {string} [options.category] - Filter by category
+ * @param {boolean} [options.is_public] - Filter by public status
+ * @param {boolean} [options.is_active] - Filter by active status
+ * @returns {Promise<Object>} Response with prompts array
+ */
+async function fetchMediatorPrompts(projectId, options = {}) {
+    const { category = null, is_public = null, is_active = null } = options;
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (is_public !== null) params.append('is_public', is_public);
+    if (is_active !== null) params.append('is_active', is_active);
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediator-prompts?${params}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching mediator prompts:', error);
+        throw error;
+    }
+}
+
+/**
+ * Create mediator prompt
+ * @param {string} projectId - Project ID
+ * @param {Object} promptData - Prompt data
+ * @returns {Promise<Object>} Response with created prompt
+ */
+async function createMediatorPrompt(projectId, promptData) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediator-prompts`, {
+            method: 'POST',
+            body: JSON.stringify(promptData),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating mediator prompt:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update mediator prompt
+ * @param {string} projectId - Project ID
+ * @param {string} promptId - Prompt ID
+ * @param {Object} updates - Prompt updates
+ * @returns {Promise<Object>} Response with updated prompt
+ */
+async function updateMediatorPrompt(projectId, promptId, updates) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediator-prompts/${encodeURIComponent(promptId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating mediator prompt:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete mediator prompt
+ * @param {string} projectId - Project ID
+ * @param {string} promptId - Prompt ID
+ * @returns {Promise<Object>} Response with deletion confirmation
+ */
+async function deleteMediatorPrompt(projectId, promptId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediator-prompts/${encodeURIComponent(promptId)}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting mediator prompt:', error);
+        throw error;
+    }
+}
+
+/**
+ * Duplicate mediator prompt
+ * @param {string} projectId - Project ID
+ * @param {string} promptId - Prompt ID to duplicate
+ * @returns {Promise<Object>} Response with duplicated prompt
+ */
+async function duplicateMediatorPrompt(projectId, promptId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediator-prompts/${encodeURIComponent(promptId)}/duplicate`, {
+            method: 'POST',
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error duplicating mediator prompt:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch mediator prompt categories
+ * @returns {Promise<Object>} Response with categories array
+ */
+async function fetchMediatorPromptCategories() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/mediator-prompts/categories`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching mediator prompt categories:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch mediators for a project
+ * @param {string} projectId - Project ID
+ * @param {Object} options - Query options
+ * @param {boolean} [options.is_active] - Filter by active status
+ * @returns {Promise<Object>} Response with mediators array
+ */
+async function fetchMediators(projectId, options = {}) {
+    const { is_active = null } = options;
+    const params = new URLSearchParams();
+    if (is_active !== null) params.append('is_active', is_active);
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediators?${params}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching mediators:', error);
+        throw error;
+    }
+}
+
+/**
+ * Create mediator
+ * @param {string} projectId - Project ID
+ * @param {Object} mediatorData - Mediator data
+ * @returns {Promise<Object>} Response with created mediator
+ */
+async function createMediator(projectId, mediatorData) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediators`, {
+            method: 'POST',
+            body: JSON.stringify(mediatorData),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating mediator:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update mediator
+ * @param {string} projectId - Project ID
+ * @param {string} mediatorId - Mediator ID
+ * @param {Object} updates - Mediator updates
+ * @returns {Promise<Object>} Response with updated mediator
+ */
+async function updateMediator(projectId, mediatorId, updates) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediators/${encodeURIComponent(mediatorId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating mediator:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete mediator
+ * @param {string} projectId - Project ID
+ * @param {string} mediatorId - Mediator ID
+ * @returns {Promise<Object>} Response with deletion confirmation
+ */
+async function deleteMediator(projectId, mediatorId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/mediators/${encodeURIComponent(mediatorId)}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting mediator:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch chat room mediators
+ * @param {string} roomId - Chat room ID
+ * @returns {Promise<Object>} Response with room mediators array
+ */
+async function fetchChatRoomMediators(roomId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/chat/rooms/${encodeURIComponent(roomId)}/mediators`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching chat room mediators:', error);
+        throw error;
+    }
+}
+
+/**
+ * Add mediator to chat room
+ * @param {string} roomId - Chat room ID
+ * @param {Object} assignment - Assignment data
+ * @returns {Promise<Object>} Response with assignment confirmation
+ */
+async function addMediatorToRoom(roomId, assignment) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/chat/rooms/${encodeURIComponent(roomId)}/mediators`, {
+            method: 'POST',
+            body: JSON.stringify(assignment),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error adding mediator to room:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update chat room mediator
+ * @param {string} roomId - Chat room ID
+ * @param {string} mediatorId - Mediator ID
+ * @param {Object} updates - Updates
+ * @returns {Promise<Object>} Response with updated assignment
+ */
+async function updateRoomMediator(roomId, mediatorId, updates) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/chat/rooms/${encodeURIComponent(roomId)}/mediators/${encodeURIComponent(mediatorId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(updates),
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating room mediator:', error);
+        throw error;
+    }
+}
+
+/**
+ * Remove mediator from chat room
+ * @param {string} roomId - Chat room ID
+ * @param {string} mediatorId - Mediator ID
+ * @returns {Promise<Object>} Response with removal confirmation
+ */
+async function removeMediatorFromRoom(roomId, mediatorId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/chat/rooms/${encodeURIComponent(roomId)}/mediators/${encodeURIComponent(mediatorId)}`, {
+            method: 'DELETE',
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error removing mediator from room:', error);
+        throw error;
+    }
+}
+
+/**
+ * Trigger mediator manually
+ * @param {string} roomId - Chat room ID
+ * @param {string} mediatorId - Mediator ID
+ * @returns {Promise<Object>} Response with trigger result
+ */
+async function triggerMediator(roomId, mediatorId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/chat/rooms/${encodeURIComponent(roomId)}/mediators/${encodeURIComponent(mediatorId)}/trigger`, {
+            method: 'POST',
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error triggering mediator:', error);
+        throw error;
+    }
+}
+
 // Browser environment: attach to window object
 if (typeof window !== 'undefined') {
     window.fetchAgents = fetchAgents;
@@ -1051,4 +1468,24 @@ if (typeof window !== 'undefined') {
     window.unassignAgentFromProject = unassignAgentFromProject;
     window.sendProjectMessage = sendProjectMessage;
     window.getProjectMessages = getProjectMessages;
+    // Mediator management
+    window.fetchMediatorModels = fetchMediatorModels;
+    window.createMediatorModel = createMediatorModel;
+    window.updateMediatorModel = updateMediatorModel;
+    window.deleteMediatorModel = deleteMediatorModel;
+    window.fetchMediatorPrompts = fetchMediatorPrompts;
+    window.createMediatorPrompt = createMediatorPrompt;
+    window.updateMediatorPrompt = updateMediatorPrompt;
+    window.deleteMediatorPrompt = deleteMediatorPrompt;
+    window.duplicateMediatorPrompt = duplicateMediatorPrompt;
+    window.fetchMediatorPromptCategories = fetchMediatorPromptCategories;
+    window.fetchMediators = fetchMediators;
+    window.createMediator = createMediator;
+    window.updateMediator = updateMediator;
+    window.deleteMediator = deleteMediator;
+    window.fetchChatRoomMediators = fetchChatRoomMediators;
+    window.addMediatorToRoom = addMediatorToRoom;
+    window.updateRoomMediator = updateRoomMediator;
+    window.removeMediatorFromRoom = removeMediatorFromRoom;
+    window.triggerMediator = triggerMediator;
 }

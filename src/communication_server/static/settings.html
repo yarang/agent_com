@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="settings.title">Settings - AI Agent Communication System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/settings.css">
+</head>
+<body>
+    <!-- Background gradient -->
+    <div class="bg-gradient"></div>
+    <div class="bg-pattern"></div>
+
+    <div class="settings-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="btn-back" id="backBtn" data-i18n-title="common.back">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
+                <div class="header-title">
+                    <h1 data-i18n="settings.title">Settings</h1>
+                </div>
+            </div>
+            <div class="header-right">
+                <nav class="header-nav">
+                    <a href="index.html" class="nav-link">Dashboard</a>
+                    <a href="mission-control.html" class="nav-link">Mission Control</a>
+                    <a href="mediators.html" class="nav-link">Mediators</a>
+                    <a href="settings.html" class="nav-link active">Settings</a>
+                </nav>
+                <div class="status-badge" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text" data-i18n="connection.connecting">연결 중...</span>
+                </div>
+                <div class="language-toggle" id="languageToggle">
+                    <button class="btn-icon" id="languageBtn" title="Language / 언어">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                        </svg>
+                        <span id="currentLang">KO</span>
+                    </button>
+                    <div class="language-dropdown" id="languageDropdown" style="display: none;">
+                        <button class="language-option" data-lang="ko">한국어</button>
+                        <button class="language-option" data-lang="en">English</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="settings-main">
+            <!-- Settings Navigation -->
+            <aside class="settings-nav" id="settingsNav">
+                <nav class="settings-nav-list">
+                    <button class="settings-nav-item active" data-section="profile">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span data-i18n="settings.nav.profile">Profile</span>
+                    </button>
+                    <button class="settings-nav-item" data-section="api-keys">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                        </svg>
+                        <span data-i18n="settings.nav.apiKeys">API Keys</span>
+                    </button>
+                    <button class="settings-nav-item" data-section="appearance">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                        <span data-i18n="settings.nav.appearance">Appearance</span>
+                    </button>
+                    <button class="settings-nav-item" data-section="notifications">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <span data-i18n="settings.nav.notifications">Notifications</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Settings Content -->
+            <div class="settings-content">
+                <!-- Profile Section -->
+                <section class="settings-section active" id="profileSection">
+                    <div class="section-header">
+                        <h2 data-i18n="settings.profile.title">Profile Settings</h2>
+                        <p class="section-description" data-i18n="settings.profile.description">Manage your account information and preferences</p>
+                    </div>
+
+                    <div class="settings-body">
+                        <form id="profileForm" class="settings-form">
+                            <!-- Avatar Upload -->
+                            <div class="form-group avatar-group">
+                                <label data-i18n="settings.profile.avatar">Avatar</label>
+                                <div class="avatar-upload">
+                                    <div class="avatar-preview" id="avatarPreview">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                            <circle cx="12" cy="7" r="4"/>
+                                        </svg>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="changeAvatarBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                            <circle cx="12" cy="13" r="4"/>
+                                        </svg>
+                                        <span data-i18n="settings.profile.changeAvatar">Change</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Username -->
+                            <div class="form-group">
+                                <label for="username" data-i18n="settings.profile.username">Username</label>
+                                <input
+                                    type="text"
+                                    id="username"
+                                    name="username"
+                                    class="input-field"
+                                    readonly
+                                />
+                                <small class="form-hint" data-i18n="settings.profile.usernameHint">Username cannot be changed</small>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="form-group">
+                                <label for="email" data-i18n="settings.profile.email">Email</label>
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    class="input-field"
+                                />
+                                <small class="form-hint" data-i18n="settings.profile.emailHint">Used for account recovery</small>
+                            </div>
+
+                            <!-- Role (Read-only) -->
+                            <div class="form-group">
+                                <label for="role" data-i18n="settings.profile.role">Role</label>
+                                <input
+                                    type="text"
+                                    id="role"
+                                    name="role"
+                                    class="input-field"
+                                    readonly
+                                />
+                                <small class="form-hint" data-i18n="settings.profile.roleHint">Assigned by administrator</small>
+                            </div>
+
+                            <!-- Account Info -->
+                            <div class="form-group account-info">
+                                <h3 data-i18n="settings.profile.accountInfo">Account Information</h3>
+                                <div class="info-list">
+                                    <div class="info-item">
+                                        <span class="info-label" data-i18n="settings.profile.userId">User ID</span>
+                                        <span class="info-value" id="userId">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label" data-i18n="settings.profile.createdAt">Created At</span>
+                                        <span class="info-value" id="createdAt">-</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label" data-i18n="settings.profile.lastLogin">Last Login</span>
+                                        <span class="info-value" id="lastLogin">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="saveProfileBtn">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                        <polyline points="17 21 17 13 7 13 7 21"/>
+                                        <polyline points="7 3 7 8 15 8"/>
+                                    </svg>
+                                    <span data-i18n="settings.profile.save">Save Changes</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Password Change Section -->
+                        <div class="password-section">
+                            <div class="section-divider">
+                                <span data-i18n="settings.profile.passwordSection">Password</span>
+                            </div>
+                            <form id="passwordForm" class="settings-form">
+                                <div class="form-group">
+                                    <label for="currentPassword" data-i18n="settings.profile.currentPassword">Current Password</label>
+                                    <div class="input-with-toggle">
+                                        <input
+                                            type="password"
+                                            id="currentPassword"
+                                            name="currentPassword"
+                                            class="input-field"
+                                            minlength="12"
+                                            required
+                                        />
+                                        <button type="button" class="btn-toggle-password" data-target="currentPassword">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="newPassword" data-i18n="settings.profile.newPassword">New Password</label>
+                                    <div class="input-with-toggle">
+                                        <input
+                                            type="password"
+                                            id="newPassword"
+                                            name="newPassword"
+                                            class="input-field"
+                                            minlength="12"
+                                            required
+                                        />
+                                        <button type="button" class="btn-toggle-password" data-target="newPassword">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength" id="passwordStrength">
+                                        <div class="strength-bar">
+                                            <div class="strength-fill" id="strengthFill"></div>
+                                        </div>
+                                        <span class="strength-text" id="strengthText" data-i18n="settings.profile.passwordStrength">Enter a password</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="confirmPassword" data-i18n="settings.profile.confirmPassword">Confirm New Password</label>
+                                    <div class="input-with-toggle">
+                                        <input
+                                            type="password"
+                                            id="confirmPassword"
+                                            name="confirmPassword"
+                                            class="input-field"
+                                            minlength="12"
+                                            required
+                                        />
+                                        <button type="button" class="btn-toggle-password" data-target="confirmPassword">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn btn-primary" id="changePasswordBtn">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                        </svg>
+                                        <span data-i18n="settings.profile.changePassword">Change Password</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- API Keys Section -->
+                <section class="settings-section" id="apiKeysSection">
+                    <div class="section-header">
+                        <h2 data-i18n="settings.apiKeys.title">API Keys Configuration</h2>
+                        <p class="section-description" data-i18n="settings.apiKeys.description">Configure LLM provider API keys for mediators</p>
+                    </div>
+
+                    <div class="settings-body">
+                        <!-- OpenAI API Key -->
+                        <div class="api-key-card">
+                            <div class="api-key-header">
+                                <div class="api-key-info">
+                                    <div class="api-key-icon openai">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0567l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 data-i18n="settings.apiKeys.openai">OpenAI API Key</h3>
+                                        <p class="api-key-description" data-i18n="settings.apiKeys.openaiDesc">Used for GPT-4 and other OpenAI models</p>
+                                    </div>
+                                </div>
+                                <div class="api-key-status" id="openaiKeyStatus">
+                                    <span class="status-indicator status-missing"></span>
+                                    <span class="status-text" data-i18n="settings.apiKeys.notConfigured">Not configured</span>
+                                </div>
+                            </div>
+                            <div class="api-key-body">
+                                <div class="form-group">
+                                    <label for="openaiApiKey" data-i18n="settings.apiKeys.enterKey">Enter API Key</label>
+                                    <div class="input-with-action">
+                                        <input
+                                            type="password"
+                                            id="openaiApiKey"
+                                            class="input-field"
+                                            placeholder="sk-..."
+                                            autocomplete="off"
+                                        />
+                                        <button type="button" class="btn-toggle-password" data-target="openaiApiKey">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <small class="form-hint" data-i18n="settings.apiKeys.openaiHint">Store securely in your browser. Never share your API keys.</small>
+                                </div>
+                                <div class="api-key-actions">
+                                    <button type="button" class="btn btn-primary btn-sm" id="saveOpenAIKeyBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                            <polyline points="17 21 17 13 7 13 7 21"/>
+                                            <polyline points="7 3 7 8 15 8"/>
+                                        </svg>
+                                        <span data-i18n="settings.apiKeys.save">Save</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="removeOpenAIKeyBtn" style="display: none;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                        <span data-i18n="settings.apiKeys.remove">Remove</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Anthropic API Key -->
+                        <div class="api-key-card">
+                            <div class="api-key-header">
+                                <div class="api-key-info">
+                                    <div class="api-key-icon anthropic">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M17.304 3.541l-5.304 5.304-5.304-5.304a6.001 6.001 0 0 1 10.608 0zM17.304 20.459l-5.304-5.304-5.304 5.304a6.001 6.001 0 0 0 10.608 0zM3.541 6.696l5.304 5.304-5.304 5.304a6.001 6.001 0 0 1 0-10.608zM20.459 6.696l-5.304 5.304 5.304 5.304a6.001 6.001 0 0 0 0-10.608z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 data-i18n="settings.apiKeys.anthropic">Anthropic API Key</h3>
+                                        <p class="api-key-description" data-i18n="settings.apiKeys.anthropicDesc">Used for Claude 3 and other Anthropic models</p>
+                                    </div>
+                                </div>
+                                <div class="api-key-status" id="anthropicKeyStatus">
+                                    <span class="status-indicator status-missing"></span>
+                                    <span class="status-text" data-i18n="settings.apiKeys.notConfigured">Not configured</span>
+                                </div>
+                            </div>
+                            <div class="api-key-body">
+                                <div class="form-group">
+                                    <label for="anthropicApiKey" data-i18n="settings.apiKeys.enterKey">Enter API Key</label>
+                                    <div class="input-with-action">
+                                        <input
+                                            type="password"
+                                            id="anthropicApiKey"
+                                            class="input-field"
+                                            placeholder="sk-ant-..."
+                                            autocomplete="off"
+                                        />
+                                        <button type="button" class="btn-toggle-password" data-target="anthropicApiKey">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                                <circle cx="12" cy="12" r="3"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <small class="form-hint" data-i18n="settings.apiKeys.anthropicHint">Store securely in your browser. Never share your API keys.</small>
+                                </div>
+                                <div class="api-key-actions">
+                                    <button type="button" class="btn btn-primary btn-sm" id="saveAnthropicKeyBtn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                                            <polyline points="17 21 17 13 7 13 7 21"/>
+                                            <polyline points="7 3 7 8 15 8"/>
+                                        </svg>
+                                        <span data-i18n="settings.apiKeys.save">Save</span>
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" id="removeAnthropicKeyBtn" style="display: none;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"/>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                        </svg>
+                                        <span data-i18n="settings.apiKeys.remove">Remove</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Info Notice -->
+                        <div class="settings-notice info">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="16" x2="12" y2="12"/>
+                                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                            </svg>
+                            <div>
+                                <h4 data-i18n="settings.apiKeys.noticeTitle">About API Keys</h4>
+                                <p data-i18n="settings.apiKeys.noticeText">API keys are stored securely in your browser's localStorage. For production use, configure API keys using environment variables on the server.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Appearance Section -->
+                <section class="settings-section" id="appearanceSection">
+                    <div class="section-header">
+                        <h2 data-i18n="settings.appearance.title">Appearance</h2>
+                        <p class="section-description" data-i18n="settings.appearance.description">Customize the look and feel</p>
+                    </div>
+
+                    <div class="settings-body">
+                        <!-- Theme Selection -->
+                        <div class="appearance-card">
+                            <h3 data-i18n="settings.appearance.theme">Theme</h3>
+                            <div class="theme-options">
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="dark" checked>
+                                    <div class="theme-preview dark">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                        </svg>
+                                        <span data-i18n="settings.appearance.dark">Dark</span>
+                                    </div>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="light">
+                                    <div class="theme-preview light">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                            <circle cx="12" cy="12" r="5"/>
+                                            <line x1="12" y1="1" x2="12" y2="3"/>
+                                            <line x1="12" y1="21" x2="12" y2="23"/>
+                                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                            <line x1="1" y1="12" x2="3" y2="12"/>
+                                            <line x1="21" y1="12" x2="23" y2="12"/>
+                                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                                        </svg>
+                                        <span data-i18n="settings.appearance.light">Light</span>
+                                    </div>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="theme" value="system">
+                                    <div class="theme-preview system">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                            <line x1="8" y1="21" x2="16" y2="21"/>
+                                            <line x1="12" y1="17" x2="12" y2="21"/>
+                                        </svg>
+                                        <span data-i18n="settings.appearance.system">System</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Font Size -->
+                        <div class="appearance-card">
+                            <h3 data-i18n="settings.appearance.fontSize">Font Size</h3>
+                            <div class="font-size-options">
+                                <button type="button" class="font-size-btn" data-size="small">
+                                    <span style="font-size: 12px;">A</span>
+                                    <span data-i18n="settings.appearance.small">Small</span>
+                                </button>
+                                <button type="button" class="font-size-btn active" data-size="medium">
+                                    <span style="font-size: 14px;">A</span>
+                                    <span data-i18n="settings.appearance.medium">Medium</span>
+                                </button>
+                                <button type="button" class="font-size-btn" data-size="large">
+                                    <span style="font-size: 16px;">A</span>
+                                    <span data-i18n="settings.appearance.large">Large</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Compact Mode -->
+                        <div class="appearance-card">
+                            <div class="setting-toggle">
+                                <div class="setting-info">
+                                    <h3 data-i18n="settings.appearance.compactMode">Compact Mode</h3>
+                                    <p data-i18n="settings.appearance.compactModeDesc">Reduce spacing for more content density</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="compactMode">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notifications Section -->
+                <section class="settings-section" id="notificationsSection">
+                    <div class="section-header">
+                        <h2 data-i18n="settings.notifications.title">Notifications</h2>
+                        <p class="section-description" data-i18n="settings.notifications.description">Manage how you receive updates</p>
+                    </div>
+
+                    <div class="settings-body">
+                        <!-- Browser Notifications -->
+                        <div class="notification-card">
+                            <div class="setting-toggle">
+                                <div class="setting-info">
+                                    <h3 data-i18n="settings.notifications.browser">Browser Notifications</h3>
+                                    <p data-i18n="settings.notifications.browserDesc">Allow desktop notifications for important events</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="browserNotifications">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Sound Notifications -->
+                        <div class="notification-card">
+                            <div class="setting-toggle">
+                                <div class="setting-info">
+                                    <h3 data-i18n="settings.notifications.sound">Sound</h3>
+                                    <p data-i18n="settings.notifications.soundDesc">Play sound for new messages</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="soundNotifications" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Message Types -->
+                        <div class="notification-types">
+                            <h3 data-i18n="settings.notifications.types">Notify me about</h3>
+                            <label class="notification-type-item">
+                                <input type="checkbox" name="notificationType" value="messages" checked>
+                                <span data-i18n="settings.notifications.newMessages">New messages</span>
+                            </label>
+                            <label class="notification-type-item">
+                                <input type="checkbox" name="notificationType" value="agent_status" checked>
+                                <span data-i18n="settings.notifications.agentStatus">Agent status changes</span>
+                            </label>
+                            <label class="notification-type-item">
+                                <input type="checkbox" name="notificationType" value="meetings">
+                                <span data-i18n="settings.notifications.meetings">Meeting invites</span>
+                            </label>
+                            <label class="notification-type-item">
+                                <input type="checkbox" name="notificationType" value="decisions">
+                                <span data-i18n="settings.notifications.decisions">Decision required</span>
+                            </label>
+                        </div>
+
+                        <!-- Test Notification Button -->
+                        <button type="button" class="btn btn-secondary" id="testNotificationBtn">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                            <span data-i18n="settings.notifications.test">Test Notification</span>
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/settings.js"></script>
+</body>
+</html>

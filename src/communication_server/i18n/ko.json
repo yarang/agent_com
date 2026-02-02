@@ -94,6 +94,85 @@
   "common": {
     "refresh": "새로고침",
     "loading": "로딩 중...",
-    "error": "오류"
+    "error": "오류",
+    "back": "뒤로",
+    "save": "저장",
+    "cancel": "취소"
+  },
+  "settings": {
+    "title": "설정",
+    "nav": {
+      "profile": "프로필",
+      "apiKeys": "API 키",
+      "appearance": "외관",
+      "notifications": "알림"
+    },
+    "profile": {
+      "title": "프로필 설정",
+      "description": "계정 정보 및 기본 설정을 관리하세요",
+      "avatar": "프로필 사진",
+      "changeAvatar": "변경",
+      "username": "사용자 이름",
+      "usernameHint": "사용자 이름은 변경할 수 없습니다",
+      "email": "이메일",
+      "emailHint": "계정 복구에 사용됩니다",
+      "role": "역할",
+      "roleHint": "관리자가 할당합니다",
+      "accountInfo": "계정 정보",
+      "userId": "사용자 ID",
+      "createdAt": "가입일",
+      "lastLogin": "마지막 로그인",
+      "save": "변경 사항 저장",
+      "passwordSection": "비밀번호",
+      "currentPassword": "현재 비밀번호",
+      "newPassword": "새 비밀번호",
+      "confirmPassword": "새 비밀번호 확인",
+      "passwordStrength": "비밀번호를 입력하세요",
+      "changePassword": "비밀번호 변경"
+    },
+    "apiKeys": {
+      "title": "API 키 구성",
+      "description": "중재자를 위한 LLM 제공업체 API 키를 구성하세요",
+      "openai": "OpenAI API 키",
+      "openaiDesc": "GPT-4 및 기타 OpenAI 모델용",
+      "anthropic": "Anthropic API 키",
+      "anthropicDesc": "Claude 3 및 기타 Anthropic 모델용",
+      "enterKey": "API 키 입력",
+      "openaiHint": "브라우저에 안전하게 저장됩니다. API 키를 절대 공유하지 마세요.",
+      "anthropicHint": "브라우저에 안전하게 저장됩니다. API 키를 절대 공유하지 마세요.",
+      "save": "저장",
+      "remove": "제거",
+      "notConfigured": "구성되지 않음",
+      "noticeTitle": "API 키 정보",
+      "noticeText": "API 키는 브라우저의 localStorage에 안전하게 저장됩니다. 프로덕션용으로는 서버의 환경 변수를 사용하여 API 키를 구성하세요."
+    },
+    "appearance": {
+      "title": "외관",
+      "description": "모양과 느낌을 사용자 정의하세요",
+      "theme": "테마",
+      "dark": "다크",
+      "light": "라이트",
+      "system": "시스템",
+      "fontSize": "글꼴 크기",
+      "small": "작게",
+      "medium": "보통",
+      "large": "크게",
+      "compactMode": " compact 모드",
+      "compactModeDesc": "더 많은 콘텐츠 밀도를 위해 간격 줄이기"
+    },
+    "notifications": {
+      "title": "알림",
+      "description": "업데이트 수신 방법을 관리하세요",
+      "browser": "브라우저 알림",
+      "browserDesc": "중요한 이벤트에 대한 데스크톱 알림 허용",
+      "sound": "소리",
+      "soundDesc": "새 메시지 소리 재생",
+      "types": "다음에 대해 알림",
+      "newMessages": "새 메시지",
+      "agentStatus": "에이전트 상태 변경",
+      "meetings": "회의 초대",
+      "decisions": "결정 필요",
+      "test": "테스트 알림"
+    }
   }
 }
