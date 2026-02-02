@@ -19,7 +19,7 @@ echo ""
 # 1. Communication Server (포트 8000)
 echo "1️⃣ Communication Server 시작 (포트 8000)..."
 export CONFIG_PATH="$PROJECT_DIR/config.comm.json"
-python -m communication_server.main > /tmp/comm_server.log 2>&1 &
+uv run communication_server.main > /tmp/comm_server.log 2>&1 &
 COMM_PID=$!
 echo "   PID: $COMM_PID"
 sleep 3
@@ -27,7 +27,7 @@ sleep 3
 # 2. MCP Broker Server (포트 8001)
 echo ""
 echo "2️⃣ MCP Broker Server 시작 (포트 8001)..."
-python -m mcp_broker.main > /tmp/mcp_broker.log 2>&1 &
+uv run mcp_broker.main > /tmp/mcp_broker.log 2>&1 &
 BROKER_PID=$!
 echo "   PID: $BROKER_PID"
 
