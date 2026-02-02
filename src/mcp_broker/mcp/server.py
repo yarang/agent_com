@@ -5,23 +5,22 @@ This module provides the MCPServer class that integrates the
 broker components with the official MCP Python SDK.
 """
 
-from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server as stdio_server
 
+from mcp_broker.client.http_client import HTTPClient
 from mcp_broker.core.logging import get_logger
-from mcp_broker.mcp.tools import MCPTools
 from mcp_broker.mcp.meeting_tools import MeetingMCPTools
+from mcp_broker.mcp.tools import MCPTools
 from mcp_broker.negotiation.negotiator import CapabilityNegotiator
-from mcp_broker.protocol.registry import ProtocolRegistry
 from mcp_broker.project.registry import ProjectRegistry
+from mcp_broker.protocol.registry import ProtocolRegistry
 from mcp_broker.routing.router import MessageRouter
 from mcp_broker.session.manager import SessionManager
 from mcp_broker.storage.memory import InMemoryStorage
-from mcp_broker.client.http_client import HTTPClient
 
 logger = get_logger(__name__)
 
@@ -62,16 +61,19 @@ class MCPServer:
             agent_id: This agent's ID (deprecated, use agent_nickname from config)
             communication_server_url: URL of the Communication Server (deprecated, use config)
         """
-        from mcp_broker.core.config import BrokerConfig, get_config
         import os
+
+        from mcp_broker.core.config import get_config
 
         self.config = config or get_config()
 
         # Use agent configuration from config or environment
-        self._agent_nickname = self.config.agent_nickname
-        self._agent_token = self.config.agent_token
-        self._agent_project_id = self.config.agent_project_id
-        self._communication_server_url = self.config.communication_server_url
+        self._agent_nickname = self.config.agent.nickname
+        self._agent_token = self.config.authentication.api_token.value or os.getenv(
+            "AGENT_TOKEN", ""
+        )
+        self._agent_project_id = self.config.agent.project_id
+        self._communication_server_url = self.config.communication_server.url
 
         # For backward compatibility, support agent_id parameter
         self._agent_id = (
@@ -79,13 +81,15 @@ class MCPServer:
         )
 
         # Initialize components
-        self._storage = InMemoryStorage(queue_capacity=self.config.queue_capacity)
+        self._storage = InMemoryStorage(
+            queue_capacity=int(os.getenv("MCP_BROKER_QUEUE_CAPACITY", "100"))
+        )
         self.protocol_registry = ProtocolRegistry(self._storage)
         self.session_manager = SessionManager(
             storage=self._storage,
-            queue_capacity=self.config.queue_capacity,
-            stale_threshold=self.config.stale_threshold,
-            disconnect_threshold=self.config.disconnect_threshold,
+            queue_capacity=int(os.getenv("MCP_BROKER_QUEUE_CAPACITY", "100")),
+            stale_threshold=int(os.getenv("MCP_BROKER_STALE_THRESHOLD", "30")),
+            disconnect_threshold=int(os.getenv("MCP_BROKER_DISCONNECT_THRESHOLD", "60")),
         )
         self.negotiator = CapabilityNegotiator()
         self.router = MessageRouter(self.session_manager, self._storage)

@@ -83,11 +83,11 @@ class HTTPClient:
 
         # Get agent token from parameter, env var, or config
         if not agent_token:
-            agent_token = config.agent_token or os.getenv("AGENT_TOKEN", "")
+            agent_token = config.authentication.api_token.value or os.getenv("AGENT_TOKEN", "")
 
         # Get agent nickname from parameter, env var, or config
         if agent_nickname == "AnonymousAgent":
-            agent_nickname = config.agent_nickname or os.getenv("AGENT_NICKNAME", "AnonymousAgent")
+            agent_nickname = config.agent.nickname or os.getenv("AGENT_NICKNAME", "AnonymousAgent")
 
         # Ensure base_url doesn't have trailing slash
         self.base_url = base_url.rstrip("/")

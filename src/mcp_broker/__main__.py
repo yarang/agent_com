@@ -168,24 +168,27 @@ async def _main_async() -> int:
     config = get_config(**overrides)
 
     # Setup logging
-    setup_logging(level=config.log_level, log_format=config.log_format)
+    setup_logging(level=config.get_log_level(), format_type=config.get_log_format())
     logger = get_logger(__name__)
 
     # Log startup configuration
     logger.info("Starting MCP Broker Server")
-    logger.info(f"Host: {config.host}")
-    logger.info(f"Port: {config.port}")
-    logger.info(f"Storage: {config.storage_backend}")
-    logger.info(f"Authentication: {'enabled' if config.enable_auth else 'disabled'}")
-    logger.info(f"CORS origins: {config.cors_origins}")
+    logger.info(f"Host: {config.server.host}")
+    logger.info(f"Port: {config.server.port}")
 
     # Log agent configuration
-    logger.info(f"Agent nickname: {config.agent_nickname}")
-    logger.info(f"Agent project ID: {config.agent_project_id}")
-    logger.info(f"Communication Server: {config.communication_server_url}")
+    logger.info(f"Agent nickname: {config.agent.nickname}")
+    logger.info(f"Agent project ID: {config.agent.project_id}")
+    logger.info(f"Communication Server: {config.communication_server.url}")
 
     # Check for agent token
-    if not config.agent_token:
+    agent_token = config.authentication.api_token.value
+    import os
+
+    if not agent_token:
+        agent_token = os.getenv("AGENT_TOKEN", "")
+
+    if not agent_token:
         logger.warning(
             "WARNING: AGENT_TOKEN not configured. "
             "Please register your agent from the dashboard and set AGENT_TOKEN environment variable. "
