@@ -10,11 +10,14 @@
 const isHttps = window.location.protocol === 'https:';
 
 // API Configuration - always use port 8000
+// Export to window for use by other modules (auth.js, login.js, etc.)
 const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:8000/api/v1`;
+window.API_BASE_URL = API_BASE_URL;
 
 // WebSocket URL with protocol detection - always use port 8000
 const WS_PROTOCOL = isHttps ? 'wss' : 'ws';
 const WS_URL = `${WS_PROTOCOL}://${window.location.hostname}:8000/ws/status`;
+window.WS_URL = WS_URL;
 
 // WebSocket connection
 let ws = null;
