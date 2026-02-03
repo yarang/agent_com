@@ -104,14 +104,18 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         "X-XSS-Protection": "1; mode=block",
         # Content Security Policy (restricts resource sources)
         # Relaxed for development - allows same-origin across ports
+        # Added 'unsafe-eval' and broad script-src for compatibility with external libraries
         "Content-Security-Policy": (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "img-src 'self' data: https:; "
-            "font-src 'self' data: https://cdn.jsdelivr.net; "
-            "connect-src 'self' * ws: wss: https://cdn.jsdelivr.net; "
-            "frame-ancestors 'none';"
+            "default-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net * data: blob:; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net *; "
+            "img-src 'self' data: https: http: *; "
+            "font-src 'self' data: https://cdn.jsdelivr.net *; "
+            "connect-src 'self' * ws: wss: https:// http:; "
+            "frame-src 'self' * data: blob:; "
+            "frame-ancestors 'self' *; "
+            "worker-src 'self' blob: *; "
+            "object-src 'none';"
         ),
         # Referrer policy
         "Referrer-Policy": "strict-origin-when-cross-origin",
