@@ -14,7 +14,8 @@ const mcState = {
     currentSpec: null,
     pendingDecisions: 0,
     wsConnected: false,
-    currentProjectId: 'proj_main',
+    currentProjectId: null,  // Will be set when projects load
+    projects: [],
     selectedAgentId: null,
 };
 
@@ -43,11 +44,17 @@ const mcElements = {
     // Connection Status
     wsConnectionStatus: null,
 
+    // Project Management
+    projectSelect: null,
+    createProjectBtn: null,
+
     // Modals
     createAgentModal: null,
     panicModal: null,
     approvalModal: null,
+    createProjectModal: null,
     createAgentForm: null,
+    createProjectForm: null,
     panicConfirmInput: null,
     confirmPanicBtn: null,
     finalApprovalBtn: null,
@@ -66,8 +73,8 @@ async function initMissionControl() {
     // Set up event listeners
     setupMCEventListeners();
 
-    // Load initial data
-    await loadMissionControlData();
+    // Load projects first, then load other data
+    await loadProjects();
 
     // Connect WebSocket for real-time updates
     connectMissionControlWebSocket();
@@ -102,11 +109,17 @@ function cacheMCElements() {
     // Connection Status
     mcElements.wsConnectionStatus = document.getElementById('wsConnectionStatus');
 
+    // Project Management
+    mcElements.projectSelect = document.getElementById('projectSelect');
+    mcElements.createProjectBtn = document.getElementById('createProjectBtn');
+
     // Modals
     mcElements.createAgentModal = document.getElementById('createAgentModal');
     mcElements.panicModal = document.getElementById('panicModal');
     mcElements.approvalModal = document.getElementById('approvalModal');
+    mcElements.createProjectModal = document.getElementById('createProjectModal');
     mcElements.createAgentForm = document.getElementById('createAgentForm');
+    mcElements.createProjectForm = document.getElementById('createProjectForm');
     mcElements.panicConfirmInput = document.getElementById('panicConfirmInput');
     mcElements.confirmPanicBtn = document.getElementById('confirmPanicBtn');
     mcElements.finalApprovalBtn = document.getElementById('finalApprovalBtn');
@@ -117,6 +130,12 @@ function cacheMCElements() {
  * Set up event listeners
  */
 function setupMCEventListeners() {
+    // Project selection
+    mcElements.projectSelect?.addEventListener('change', onProjectChange);
+
+    // Create project button
+    mcElements.createProjectBtn?.addEventListener('click', showCreateProjectModal);
+
     // Refresh agents button
     mcElements.refreshAgentsBtn?.addEventListener('click', loadMissionControlData);
 
@@ -141,6 +160,9 @@ function setupMCEventListeners() {
 
     // Create Agent Form
     mcElements.createAgentForm?.addEventListener('submit', handleCreateAgent);
+
+    // Create Project Form
+    mcElements.createProjectForm?.addEventListener('submit', handleCreateProject);
 
     // Panic confirmation input
     mcElements.panicConfirmInput?.addEventListener('input', function() {
@@ -178,9 +200,18 @@ function setupMCEventListeners() {
  */
 async function loadMissionControlData() {
     try {
-        // Fetch agents, messages, and spec data in parallel
+        // If no project selected, show empty state
+        if (!mcState.currentProjectId) {
+            mcState.agents = [];
+            mcState.messages = [];
+            renderAgentList();
+            renderChatMessages();
+            return;
+        }
+
+        // Fetch agents and messages for current project in parallel
         const [agentsData, messagesData, specData] = await Promise.all([
-            fetchAgents().catch(() => ({ agents: [] })),
+            fetchProjectAgents(mcState.currentProjectId).catch(() => ({ agents: [] })),
             fetchProjectMessages(mcState.currentProjectId).catch(() => ({ messages: [] })),
             fetchCurrentSpec().catch(() => null),
         ]);
@@ -688,6 +719,191 @@ function updateMCConnectionStatus(status) {
     text.textContent = statusTexts[status] || status;
 }
 
+// ==================== Project Management Functions ====================
+
+/**
+ * Load projects and populate dropdown
+ */
+async function loadProjects() {
+    try {
+        console.log('Loading projects...');
+        const data = await fetchProjects();
+
+        if (!data || !data.projects) {
+            console.warn('No projects data received');
+            return;
+        }
+
+        mcState.projects = data.projects;
+
+        // Populate dropdown
+        populateProjectDropdown();
+
+        // Auto-select first project if available and no current project
+        if (mcState.projects.length > 0 && !mcState.currentProjectId) {
+            const firstProject = mcState.projects[0];
+            if (firstProject.project_id) {
+                mcState.currentProjectId = firstProject.project_id;
+                mcElements.projectSelect.value = firstProject.project_id;
+                await loadMissionControlData();
+            }
+        }
+
+        console.log(`Loaded ${mcState.projects.length} projects`);
+    } catch (error) {
+        console.error('Error loading projects:', error);
+        // Show error in dropdown
+        if (mcElements.projectSelect) {
+            mcElements.projectSelect.innerHTML = '<option value="">Error loading projects</option>';
+        }
+    }
+}
+
+/**
+ * Populate project dropdown with projects
+ */
+function populateProjectDropdown() {
+    if (!mcElements.projectSelect) return;
+
+    mcElements.projectSelect.innerHTML = '';
+
+    if (mcState.projects.length === 0) {
+        mcElements.projectSelect.innerHTML = '<option value="">No projects available</option>';
+        return;
+    }
+
+    mcState.projects.forEach(project => {
+        if (!project.project_id) return;
+
+        const option = document.createElement('option');
+        option.value = project.project_id;
+        option.textContent = project.name ? `${project.name} (${project.project_id})` : project.project_id;
+        mcElements.projectSelect.appendChild(option);
+    });
+}
+
+/**
+ * Handle project selection change
+ */
+async function onProjectChange(event) {
+    const newProjectId = event.target.value;
+
+    if (!newProjectId) {
+        mcState.currentProjectId = null;
+        mcState.agents = [];
+        mcState.messages = [];
+        renderAgentList();
+        renderChatMessages();
+        return;
+    }
+
+    console.log(`Project changed to: ${newProjectId}`);
+    mcState.currentProjectId = newProjectId;
+
+    // Reload data for new project
+    await loadMissionControlData();
+
+    // Update connection status
+    updateMCConnectionStatus('connected');
+}
+
+/**
+ * Show create project modal
+ */
+function showCreateProjectModal() {
+    // Check if modal exists in DOM
+    let modal = document.getElementById('createProjectModal');
+
+    if (!modal) {
+        // Create modal dynamically
+        modal = document.createElement('div');
+        modal.id = 'createProjectModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Project</h3>
+                    <button class="btn-close" onclick="closeModal('createProjectModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="createProjectForm">
+                        <div class="form-group">
+                            <label for="newProjectId">Project ID</label>
+                            <input type="text" id="newProjectId" class="form-control" placeholder="my_project" required pattern="[a-z0-9_]+" title="Use lowercase letters, numbers, and underscores only">
+                            <small class="form-hint">Use lowercase letters, numbers, and underscores</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProjectName">Project Name</label>
+                            <input type="text" id="newProjectName" class="form-control" placeholder="My Project" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProjectDescription">Description</label>
+                            <textarea id="newProjectDescription" class="form-control" rows="3" placeholder="Project description..."></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('createProjectModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Project</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Add event listener to form
+        const form = modal.querySelector('#createProjectForm');
+        form.addEventListener('submit', handleCreateProject);
+    }
+
+    modal.style.display = 'flex';
+}
+
+/**
+ * Handle create project form submission
+ */
+async function handleCreateProject(event) {
+    event.preventDefault();
+
+    const projectId = document.getElementById('newProjectId')?.value?.trim();
+    const projectName = document.getElementById('newProjectName')?.value?.trim();
+    const projectDescription = document.getElementById('newProjectDescription')?.value?.trim();
+
+    if (!projectId || !projectName) {
+        alert('Please fill in all required fields');
+        return;
+    }
+
+    try {
+        console.log('Creating project:', { projectId, projectName });
+
+        const result = await createProject({
+            project_id: projectId,
+            name: projectName,
+            description: projectDescription || '',
+        });
+
+        // Close modal
+        closeModal('createProjectModal');
+
+        // Add system message
+        addSystemMessage(`Project "${projectName}" created successfully.`);
+
+        // Reload projects
+        await loadProjects();
+
+        // Select the newly created project
+        if (mcElements.projectSelect) {
+            mcElements.projectSelect.value = projectId;
+            await onProjectChange({ target: mcElements.projectSelect });
+        }
+
+    } catch (error) {
+        console.error('Error creating project:', error);
+        alert('Failed to create project: ' + (error.message || 'Unknown error'));
+    }
+}
+
 /**
  * Close modal
  */
@@ -728,6 +944,10 @@ window.viewAgentKeys = viewAgentKeys;
 window.deleteAgent = deleteAgent;
 window.showBudgetModal = showBudgetModal;
 window.showSecurityModal = showSecurityModal;
+window.loadProjects = loadProjects;
+window.onProjectChange = onProjectChange;
+window.showCreateProjectModal = showCreateProjectModal;
+window.handleCreateProject = handleCreateProject;
 
 // Initialize Mission Control when DOM is ready
 if (document.readyState === 'loading') {

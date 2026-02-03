@@ -39,7 +39,15 @@
                 </nav>
                 <div class="project-id-display">
                     <span class="project-id-label">Project:</span>
-                    <span class="project-id-value" id="currentProjectId">proj_main</span>
+                    <select class="project-dropdown" id="projectSelect">
+                        <option value="">Loading...</option>
+                    </select>
+                    <button class="btn-icon" id="createProjectBtn" title="Create New Project">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
                 </div>
                 <div class="connection-status" id="wsConnectionStatus">
                     <span class="status-dot"></span>
