@@ -109,6 +109,7 @@ async def login(
         refresh_token=tokens["refresh_token"],
         token_type="bearer",
         expires_in=tokens["expires_in"],
+        user=user,  # Include user information in login response
     )
 
 

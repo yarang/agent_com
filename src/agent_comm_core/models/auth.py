@@ -27,15 +27,16 @@ class Token(BaseModel):
     refresh_token: str = Field(..., description="JWT refresh token")
     token_type: str = Field(default="bearer", description="Token type (always 'bearer')")
     expires_in: int = Field(..., description="Access token expiration time in seconds")
+    user: Optional["User"] = Field(None, description="User information")
 
 
 class TokenData(BaseModel):
     """Data extracted from JWT token."""
 
-    user_id: Optional[str] = None
-    agent_id: Optional[str] = None
-    exp: Optional[int] = None
-    type: Optional[str] = None
+    user_id: str | None = None
+    agent_id: str | None = None
+    exp: int | None = None
+    type: str | None = None
 
 
 class User(BaseModel):
@@ -82,7 +83,7 @@ class Agent(BaseModel):
     )
     is_active: bool = Field(default=True, description="Whether agent is active")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="Agent creation time")
-    last_used: Optional[datetime] = Field(None, description="Last authentication timestamp")
+    last_used: datetime | None = Field(None, description="Last authentication timestamp")
 
     @field_validator("nickname")
     @classmethod
