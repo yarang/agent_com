@@ -94,7 +94,8 @@ if config.security.headers.enabled:
     app.add_middleware(SecurityHeadersMiddleware)
 
 # Add rate limiting middleware if enabled
-if config.security.rate_limiting.enabled:
+# Disabled for development - re-enable in production
+if False:  # config.security.rate_limiting.enabled
     app.add_middleware(
         RateLimitMiddleware,
         requests_per_minute=config.security.rate_limiting.requests_per_minute,
