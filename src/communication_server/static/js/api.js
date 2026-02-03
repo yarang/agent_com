@@ -489,11 +489,16 @@ function updateConnectionStatus(status) {
     if (!text) return;
 
     // Use i18n if available, otherwise fallback to hardcoded labels
-    if (typeof i18n !== 'undefined' && i18n.t) {
+    if (typeof i18n !== 'undefined' && i18n && typeof i18n.t === 'function') {
         const key = `connection.${status}`;
-        text.textContent = i18n.t(key);
-        // Update data-i18n attribute for dynamic language switching
-        text.setAttribute('data-i18n', key);
+        try {
+            text.textContent = i18n.t(key);
+            // Update data-i18n attribute for dynamic language switching
+            text.setAttribute('data-i18n', key);
+        } catch {
+            // Fallback if i18n.t fails
+            text.textContent = status;
+        }
     } else {
         // Fallback for when i18n is not loaded yet
         const statusLabels = {
