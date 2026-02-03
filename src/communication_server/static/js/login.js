@@ -148,11 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show success state
                 showSuccessState('Login successful! Redirecting...');
 
-                // Get return URL or default to dashboard
-                const returnUrl = sessionStorage.getItem('auth_return_url') || '/index.html';
-
-                // Clear return URL
-                sessionStorage.removeItem('auth_return_url');
+                // Get return URL using auth.js helper (includes security validation)
+                const returnUrl = window.getReturnUrl ? window.getReturnUrl() : '/index.html';
 
                 // Redirect after delay
                 setTimeout(() => {
