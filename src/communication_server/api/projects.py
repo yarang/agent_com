@@ -326,6 +326,7 @@ async def delete_project(
 # ==================== Original List Endpoint ====================
 
 
+@router.get("")
 @router.get("/")
 async def list_projects():
     """
