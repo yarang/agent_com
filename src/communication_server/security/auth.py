@@ -127,7 +127,7 @@ class AuthService:
         """
         import json
 
-        from sqlalchemy import IntegrityError
+        from sqlalchemy.exc import IntegrityError
 
         async with db_session() as session:
             repo = UserRepository(session)
