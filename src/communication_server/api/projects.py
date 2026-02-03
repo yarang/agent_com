@@ -90,6 +90,7 @@ _project_chat_participants: dict[str, set[str]] = defaultdict(set)
 # ==================== Project CRUD Endpoints ====================
 
 
+@router.post("", response_model=ProjectCreateResponse, status_code=status.HTTP_201_CREATED)
 @router.post("/", response_model=ProjectCreateResponse, status_code=status.HTTP_201_CREATED)
 async def create_project(
     project_data: ProjectCreateRequest,
