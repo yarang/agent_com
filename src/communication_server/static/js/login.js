@@ -120,7 +120,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Check if response contains access_token
             if (response && response.access_token) {
-                // Store tokens
+                // Update auth.js auth object directly for immediate availability
+                if (window.auth) {
+                    window.auth.accessToken = response.access_token;
+                    window.auth.refreshTokenValue = response.refresh_token || null;
+                    window.auth.user = response.user || { username };
+                }
+
+                // Store tokens to localStorage
                 localStorage.setItem('access_token', response.access_token);
                 if (response.refresh_token) {
                     localStorage.setItem('refresh_token', response.refresh_token);
@@ -143,6 +150,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update auth token in API module
                 if (window.setAuthToken) {
                     window.setAuthToken(response.access_token);
+                }
+
+                // Start token refresh in auth.js
+                if (window.auth && window.auth.startTokenRefresh) {
+                    window.auth.startTokenRefresh();
                 }
 
                 // Show success state
