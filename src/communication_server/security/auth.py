@@ -9,7 +9,7 @@ server restarts.
 """
 
 from datetime import UTC, datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from jose import JWTError
 from pydantic import ValidationError
@@ -83,6 +83,23 @@ def _parse_permissions(permissions_str: str | None) -> list[str]:
         return []
 
 
+def _parse_project_uuid(project_id: str) -> UUID:
+    """Parse project ID as UUID, returning new UUID if invalid.
+
+    Args:
+        project_id: Project ID string
+
+    Returns:
+        Parsed UUID or new UUID if invalid
+    """
+    if project_id == "default":
+        return uuid4()
+    try:
+        return UUID(project_id)
+    except ValueError:
+        return uuid4()
+
+
 class AuthService:
     """
     Authentication service for users and agents.
@@ -108,11 +125,21 @@ class AuthService:
         The admin credentials should be changed immediately after first login.
         This method is idempotent - it only creates the admin user if no users exist.
         """
+        import json
+
+        from sqlalchemy import IntegrityError
 
         async with db_session() as session:
             repo = UserRepository(session)
 
-            # Check if any users exist
+            # Check if admin user already exists
+            admin_username, _ = _get_admin_credentials()
+            existing_admin = await repo.get_by_username(admin_username)
+            if existing_admin is not None:
+                # Admin already exists, nothing to do
+                return
+
+            # Check if any users exist (only create admin if no users exist)
             existing_users = await repo.list_all(limit=1)
             try:
                 _ = next(existing_users)
@@ -125,23 +152,23 @@ class AuthService:
             admin_username, admin_password = _get_admin_credentials()
             hashed_pw = self._hash_password(admin_password)
 
-            await repo.create(
-                username=admin_username,
-                email=f"{admin_username}@localhost",  # Default email
-                password_hash=hashed_pw,
-                role=UserRole.ADMIN,
-                permissions=["*"],
-            )
-            await session.commit()
+            try:
+                await repo.create(
+                    username=admin_username,
+                    email=f"{admin_username}@localhost",  # Default email
+                    password_hash=hashed_pw,
+                    role=UserRole.ADMIN,
+                    permissions=json.dumps(["*"]),  # Store as JSON string
+                )
+                await session.commit()
+            except IntegrityError:
+                # Admin was created concurrently (race condition)
+                # This is fine, just rollback and continue
+                await session.rollback()
 
     async def _ensure_admin_exists(self) -> None:
         """Ensure admin user exists, creating if necessary."""
-        try:
-            await self._initialize_admin_user()
-        except Exception:
-            # If initialization fails, continue anyway
-            # (admin may already exist)
-            pass
+        await self._initialize_admin_user()
 
     def _hash_password(self, password: str) -> str:
         """
@@ -285,18 +312,18 @@ class AuthService:
         """
         # Check for token from config (for development)
         config = get_config()
-        if config.authentication.api_token.value:
-            if token == config.authentication.api_token.value:
-                # Return a development agent
-                return Agent(
-                    id="dev-agent",
-                    project_id=config.agent.project_id,
-                    nickname=config.agent.nickname,
-                    token="hashed",
-                    capabilities=config.agent.capabilities,
-                    is_active=True,
-                    created_at=datetime.now(UTC),
-                )
+        dev_token = config.authentication.api_token.value
+        if dev_token and token == dev_token:
+            # Return a development agent
+            return Agent(
+                id="dev-agent",
+                project_id=config.agent.project_id,
+                nickname=config.agent.nickname,
+                token="hashed",
+                capabilities=config.agent.capabilities,
+                is_active=True,
+                created_at=datetime.now(UTC),
+            )
 
         # Find agent by token hash in database
         # Hash the provided token to compare with stored hashes
@@ -406,11 +433,7 @@ class AuthService:
         agent_id = uuid4()
 
         # Convert project_id to UUID (create default project if needed)
-        try:
-            project_uuid = uuid4() if project_id == "default" else UUID(project_id)
-        except ValueError:
-            # If project_id is not a valid UUID, create a new one
-            project_uuid = uuid4()
+        project_uuid = _parse_project_uuid(project_id)
 
         # Generate key_id (human-readable identifier)
         key_id = f"{nickname}_{agent_id.hex[:8]}"
@@ -436,7 +459,7 @@ class AuthService:
                 if not user_db:
                     # No admin user exists, create a default one for system agents
                     # This allows agent token creation to work in fresh installations
-                    from datetime import datetime
+                    import json
 
                     user_db = UserDB(
                         username="admin",
@@ -445,7 +468,7 @@ class AuthService:
                             "DefaultPassword123!"
                         ),  # User should change this
                         role=UserRole.ADMIN.value,
-                        permissions=["*"],
+                        permissions=json.dumps(["*"]),  # Store as JSON string
                     )
                     session.add(user_db)
                     await session.flush()
