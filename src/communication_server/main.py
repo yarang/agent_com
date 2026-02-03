@@ -222,6 +222,17 @@ async def settings():
     return JSONResponse(status_code=404, content={"error": "Settings page not found"})
 
 
+@app.get("/login.html")
+async def login_page():
+    """Serve Login page."""
+    from fastapi.responses import FileResponse
+
+    file_path = static_dir / "login.html"
+    if file_path.exists():
+        return FileResponse(str(file_path))
+    return JSONResponse(status_code=404, content={"error": "Login page not found"})
+
+
 @app.websocket("/ws/meetings/{meeting_id}")
 async def websocket_meeting_endpoint(
     websocket: WebSocket, meeting_id: str, token: str | None = None
