@@ -258,7 +258,21 @@ class AuthManager {
      * @returns {boolean} True if authenticated
      */
     isAuthenticated() {
-        return !!this.accessToken && !!this.user;
+        // If we have an access token, consider the user authenticated
+        // The user object may not be populated if the API doesn't return it
+        return !!this.accessToken;
+    }
+
+    /**
+     * Get current user
+     * @returns {Object|null} User object
+     */
+    getUser() {
+        // Return user object, or create a default one if not set but authenticated
+        if (!this.user && this.accessToken) {
+            return { username: 'User' };
+        }
+        return this.user;
     }
 
     /**
@@ -554,11 +568,16 @@ if (typeof window !== 'undefined') {
     window.redirectToLogin = redirectToLogin;
 }
 
-// Initialize auth when DOM is ready
+// Initialize auth when DOM is ready (but NOT on login/signup pages)
 if (typeof window !== 'undefined') {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAuth);
-    } else {
-        initAuth();
+    // Don't initialize auth on login or signup pages to prevent redirect loops
+    const isLoginPage = isExemptPage();
+
+    if (!isLoginPage) {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAuth);
+        } else {
+            initAuth();
+        }
     }
 }
