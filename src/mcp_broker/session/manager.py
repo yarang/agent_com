@@ -18,8 +18,6 @@ from mcp_broker.models.session import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from mcp_broker.storage.interface import StorageBackend
 
 logger = get_logger(__name__)
@@ -118,7 +116,7 @@ class SessionManager:
             queue_size=0,
         )
 
-        await self._storage.save_session(session.project_id, session)
+        await self._storage.save_session(session, session.project_id)
 
         logger.info(
             f"Session created: {sid}",
@@ -133,9 +131,7 @@ class SessionManager:
 
         return session
 
-    async def get_session(
-        self, session_id: UUID, project_id: str = "default"
-    ) -> Session | None:
+    async def get_session(self, session_id: UUID, project_id: str = "default") -> Session | None:
         """Get a session by ID.
 
         Args:
@@ -173,7 +169,7 @@ class SessionManager:
                 extra={"context": {"session_id": str(session_id), "project_id": project_id}},
             )
 
-        await self._storage.save_session(session.project_id, session)
+        await self._storage.save_session(session, session.project_id)
 
         logger.debug(
             f"Heartbeat updated for session {session_id}",
@@ -200,14 +196,18 @@ class SessionManager:
 
         logger.debug(
             f"Listed sessions: status={status_filter}, project={project_id}, count={len(sessions)}",
-            extra={"context": {"status_filter": status_filter, "project_id": project_id, "count": len(sessions)}},
+            extra={
+                "context": {
+                    "status_filter": status_filter,
+                    "project_id": project_id,
+                    "count": len(sessions),
+                }
+            },
         )
 
         return sessions
 
-    async def disconnect_session(
-        self, session_id: UUID, project_id: str = "default"
-    ) -> bool:
+    async def disconnect_session(self, session_id: UUID, project_id: str = "default") -> bool:
         """Disconnect a session.
 
         Args:
@@ -223,7 +223,7 @@ class SessionManager:
 
         # Mark as disconnected
         session.status = "disconnected"
-        await self._storage.save_session(session.project_id, session)
+        await self._storage.save_session(session, session.project_id)
 
         # Note: Keep session in storage to allow message queuing for offline sessions
         # Session will be fully cleaned up by cleanup_expired_sessions after threshold
@@ -330,24 +330,35 @@ class SessionManager:
         if messages:
             logger.debug(
                 f"Dequeued {len(messages)} messages for session {session_id}",
-                extra={"context": {"session_id": str(session_id), "project_id": project_id, "count": len(messages)}},
+                extra={
+                    "context": {
+                        "session_id": str(session_id),
+                        "project_id": project_id,
+                        "count": len(messages),
+                    }
+                },
             )
 
         return messages
 
-    async def check_stale_sessions(self) -> list[Session]:
+    async def check_stale_sessions(self, project_id: str | None = None) -> list[Session]:
         """Check for stale sessions and update their status.
+
+        Args:
+            project_id: Optional project ID to scope check (None = "default" for backward compatibility)
 
         Returns:
             List of sessions that became stale
         """
-        all_sessions = await self._storage.list_sessions()
+        # Use "default" project if None specified (for backward compatibility)
+        scoped_project_id = project_id if project_id is not None else "default"
+        all_sessions = await self._storage.list_sessions(project_id=scoped_project_id)
         stale_sessions: list[Session] = []
 
         for session in all_sessions:
             if session.status == "active" and session.is_stale(self._stale_threshold):
                 session.status = "stale"
-                await self._storage.save_session(session)
+                await self._storage.save_session(session, session.project_id)
                 stale_sessions.append(session)
 
                 logger.info(
@@ -355,6 +366,7 @@ class SessionManager:
                     extra={
                         "context": {
                             "session_id": str(session.session_id),
+                            "project_id": session.project_id,
                             "last_heartbeat": session.last_heartbeat.isoformat(),
                         }
                     },
@@ -362,20 +374,25 @@ class SessionManager:
 
         return stale_sessions
 
-    async def cleanup_expired_sessions(self) -> list[Session]:
+    async def cleanup_expired_sessions(self, project_id: str | None = None) -> list[Session]:
         """Disconnect sessions that have exceeded disconnect threshold.
+
+        Args:
+            project_id: Optional project ID to scope cleanup (None = "default" for backward compatibility)
 
         Returns:
             List of sessions that were disconnected
         """
-        all_sessions = await self._storage.list_sessions()
+        # Use "default" project if None specified (for backward compatibility)
+        scoped_project_id = project_id if project_id is not None else "default"
+        all_sessions = await self._storage.list_sessions(project_id=scoped_project_id)
         disconnected: list[Session] = []
 
         for session in all_sessions:
             if session.status in ("active", "stale") and session.should_disconnect(
                 self._disconnect_threshold
             ):
-                await self.disconnect_session(session.session_id)
+                await self.disconnect_session(session.session_id, session.project_id)
                 disconnected.append(session)
 
                 logger.info(
@@ -383,6 +400,7 @@ class SessionManager:
                     extra={
                         "context": {
                             "session_id": str(session.session_id),
+                            "project_id": session.project_id,
                             "status": session.status,
                         }
                     },

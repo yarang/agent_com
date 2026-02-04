@@ -3,6 +3,9 @@ Protocol Registry for MCP Broker Server.
 
 This module provides the ProtocolRegistry class responsible for
 registering, validating, and discovering communication protocols.
+
+Supports project-scoped protocol isolation with optional cross-project
+protocol sharing (read-only references).
 """
 
 from datetime import UTC, datetime
@@ -18,9 +21,14 @@ from mcp_broker.models.protocol import (
 from mcp_broker.storage.interface import StorageBackend
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    pass
 
 logger = get_logger(__name__)
+
+
+# Global protocol sharing registry for cross-project references
+# Maps (source_project_id, protocol_name, protocol_version) -> set(target_project_ids)
+_shared_protocols: dict[tuple[str, str, str], set[str]] = {}
 
 
 class ProtocolRegistry:
@@ -126,7 +134,9 @@ class ProtocolRegistry:
         Returns:
             List of matching protocol info objects
         """
-        protocols = await self._storage.list_protocols(name=name, version=version, project_id=project_id)
+        protocols = await self._storage.list_protocols(
+            name=name, version=version, project_id=project_id
+        )
 
         # Convert to ProtocolInfo
         results = [
@@ -140,12 +150,24 @@ class ProtocolRegistry:
             for p in protocols
         ]
 
+        # Add shared protocols if requested
+        if include_shared:
+            shared_protocols = await self._get_shared_protocols(project_id, name, version)
+            for sp in shared_protocols:
+                results.append(
+                    ProtocolInfo(
+                        name=sp.name,
+                        version=sp.version,
+                        registered_at=datetime.now(UTC),
+                        capabilities=sp.capabilities,
+                        metadata=sp.metadata,
+                    )
+                )
+
         # Filter by tags if specified
         if tags:
             results = [
-                r
-                for r in results
-                if r.metadata and any(tag in r.metadata.tags for tag in tags)
+                r for r in results if r.metadata and any(tag in r.metadata.tags for tag in tags)
             ]
 
         logger.debug(
@@ -163,6 +185,157 @@ class ProtocolRegistry:
         )
 
         return results
+
+    async def share_protocol(
+        self,
+        name: str,
+        version: str,
+        source_project_id: str,
+        target_project_id: str,
+    ) -> bool:
+        """Share a protocol with another project (read-only reference).
+
+        Args:
+            name: Protocol name
+            version: Protocol version
+            source_project_id: Source project that owns the protocol
+            target_project_id: Target project to share with
+
+        Returns:
+            True if protocol was shared, False if not found
+
+        Raises:
+            ValueError: If trying to share with self or protocol doesn't exist
+        """
+        if source_project_id == target_project_id:
+            raise ValueError("Cannot share protocol within the same project")
+
+        # Check if protocol exists in source project
+        protocol = await self._storage.get_protocol(name, version, source_project_id)
+        if not protocol:
+            return False
+
+        # Add to shared registry
+        key = (source_project_id, name, version)
+        if key not in _shared_protocols:
+            _shared_protocols[key] = set()
+
+        _shared_protocols[key].add(target_project_id)
+
+        logger.info(
+            f"Shared protocol {name} v{version} from {source_project_id} to {target_project_id}",
+            extra={
+                "context": {
+                    "protocol_name": name,
+                    "version": version,
+                    "source_project": source_project_id,
+                    "target_project": target_project_id,
+                }
+            },
+        )
+
+        return True
+
+    async def unshare_protocol(
+        self,
+        name: str,
+        version: str,
+        source_project_id: str,
+        target_project_id: str,
+    ) -> bool:
+        """Remove protocol sharing with another project.
+
+        Args:
+            name: Protocol name
+            version: Protocol version
+            source_project_id: Source project that owns the protocol
+            target_project_id: Target project to unshare from
+
+        Returns:
+            True if sharing was removed, False if not found
+        """
+        key = (source_project_id, name, version)
+        if key not in _shared_protocols:
+            return False
+
+        if target_project_id not in _shared_protocols[key]:
+            return False
+
+        _shared_protocols[key].discard(target_project_id)
+
+        # Clean up empty entries
+        if not _shared_protocols[key]:
+            del _shared_protocols[key]
+
+        logger.info(
+            f"Unshared protocol {name} v{version} from {source_project_id} to {target_project_id}",
+            extra={
+                "context": {
+                    "protocol_name": name,
+                    "version": version,
+                    "source_project": source_project_id,
+                    "target_project": target_project_id,
+                }
+            },
+        )
+
+        return True
+
+    async def list_shared_protocols(self, project_id: str) -> list[dict[str, str]]:
+        """List protocols shared with a project.
+
+        Args:
+            project_id: Project to list shared protocols for
+
+        Returns:
+            List of shared protocol info dicts
+        """
+        shared = []
+        for (source_project, name, version), targets in _shared_protocols.items():
+            if project_id in targets:
+                shared.append(
+                    {
+                        "name": name,
+                        "version": version,
+                        "source_project": source_project,
+                    }
+                )
+
+        return shared
+
+    async def _get_shared_protocols(
+        self,
+        project_id: str,
+        name: str | None = None,
+        version: str | None = None,
+    ) -> list[ProtocolDefinition]:
+        """Get protocols shared with the specified project.
+
+        Args:
+            project_id: Target project
+            name: Optional filter by protocol name
+            version: Optional filter by protocol version
+
+        Returns:
+            List of shared protocol definitions
+        """
+        shared = []
+        for (source_project, proto_name, proto_version), targets in _shared_protocols.items():
+            if project_id in targets:
+                # Apply filters
+                if name and proto_name != name:
+                    continue
+                if version and proto_version != version:
+                    continue
+
+                # Get protocol from source project
+                protocol = await self._storage.get_protocol(
+                    proto_name, proto_version, source_project
+                )
+                if protocol:
+                    shared.append(protocol)
+
+        return shared
 
     async def get(
         self, name: str, version: str, project_id: str = "default"
@@ -272,7 +445,10 @@ class ProtocolRegistry:
         # Check if protocol exists
         protocol = await self._storage.get_protocol(name, version, project_id)
         if not protocol:
-            return False, f"Protocol '{name}' version '{version}' not found in project '{project_id}'"
+            return (
+                False,
+                f"Protocol '{name}' version '{version}' not found in project '{project_id}'",
+            )
 
         # Check for active references
         active_sessions = await self.check_active_references(name, version, project_id)
@@ -280,8 +456,7 @@ class ProtocolRegistry:
             return (
                 False,
                 f"Cannot delete protocol with {len(active_sessions)} active reference(s): "
-                f"{', '.join(active_sessions[:3])}"
-                + ("..." if len(active_sessions) > 3 else ""),
+                f"{', '.join(active_sessions[:3])}" + ("..." if len(active_sessions) > 3 else ""),
             )
 
         return True, None

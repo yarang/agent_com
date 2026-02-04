@@ -1,21 +1,23 @@
 """
 WebSocket message handler for meeting communications.
 
-Handles incoming WebSocket messages and routes them to
-appropriate handlers based on message type.
+Enhanced with comprehensive event broadcasting and reconnection handling.
 """
 
-from enum import Enum
-from typing import Optional, Union
-from uuid import UUID
+import json
 import logging
+from contextlib import suppress
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from uuid import UUID
 
 from fastapi import WebSocket, WebSocketDisconnect
 
 from agent_comm_core.models.auth import Agent, User
-
-from communication_server.websocket.manager import ConnectionManager
+from agent_comm_core.services.discussion import DiscussionState
 from communication_server.websocket.auth import WebSocketAuth, get_token_from_query
+from communication_server.websocket.manager import ConnectionManager
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +37,38 @@ class MessageType(str, Enum):
     JOIN = "join"
     LEAVE = "leave"
     ERROR = "error"
+
+    # Enhanced event types
+    AGENT_JOINED = "agent_joined"
+    OPINION_PRESENTED = "opinion_presented"
+    CONSENSUS_REACHED = "consensus_reached"
+    ROUND_STARTED = "round_started"
+    ROUND_COMPLETED = "round_completed"
+    DISCUSSION_PAUSED = "discussion_paused"
+    DISCUSSION_RESUMED = "discussion_resumed"
+    RECONNECT = "reconnect"
+    STATE_SYNC = "state_sync"
+
+
+@dataclass
+class MeetingEvent:
+    """A meeting event to broadcast."""
+
+    event_type: MessageType
+    meeting_id: UUID
+    timestamp: datetime = field(default_factory=datetime.utcnow)
+    agent_id: str | None = None
+    data: dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        """Convert event to dictionary for WebSocket transmission."""
+        return {
+            "type": self.event_type.value,
+            "meeting_id": str(self.meeting_id),
+            "timestamp": self.timestamp.isoformat(),
+            "agent_id": self.agent_id,
+            "data": self.data,
+        }
 
 
 class WebSocketHandler:
@@ -58,7 +92,7 @@ class WebSocketHandler:
         self,
         websocket: WebSocket,
         meeting_id: UUID,
-        token: Optional[str] = None,
+        token: str | None = None,
     ) -> None:
         """
         Handle a WebSocket connection for a meeting.
@@ -118,21 +152,19 @@ class WebSocketHandler:
                     "participant": participant_name,
                 },
             )
-        except Exception as e:
-            # Send error message
-            try:
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            # Send error message for invalid JSON or format
+            with suppress(OSError):
                 await self._manager.send_personal_message(
                     {
                         "type": MessageType.ERROR,
-                        "message": f"Error: {str(e)}",
+                        "message": f"Invalid message format: {str(e)}",
                     },
                     websocket,
                 )
-            except Exception:
-                pass
             self._manager.disconnect(websocket)
 
-    def _get_participant_name(self, auth: Union[User, Agent]) -> str:
+    def _get_participant_name(self, auth: User | Agent) -> str:
         """
         Get display name for authenticated participant.
 
@@ -150,7 +182,7 @@ class WebSocketHandler:
             return "Anonymous"
 
     async def _handle_message(
-        self, websocket: WebSocket, meeting_id: UUID, auth: Union[User, Agent], data: dict
+        self, websocket: WebSocket, meeting_id: UUID, auth: User | Agent, data: dict
     ) -> None:
         """
         Handle an incoming message.
@@ -171,8 +203,8 @@ class WebSocketHandler:
 
         try:
             msg_type = MessageType(message_type)
-        except ValueError:
-            raise ValueError(f"Unknown message type: {message_type}")
+        except ValueError as err:
+            raise ValueError(f"Unknown message type: {message_type}") from err
 
         if msg_type == MessageType.OPINION_REQUEST:
             await self._handle_opinion_request(websocket, meeting_id, auth, data)
@@ -184,40 +216,9 @@ class WebSocketHandler:
             await self._handle_consensus_vote(websocket, meeting_id, auth, data)
         else:
             raise ValueError(f"Unhandled message type: {message_type}")
-        """
-        Handle an incoming message.
-
-        Args:
-            websocket: WebSocket connection
-            meeting_id: Meeting ID
-            data: Message data
-
-        Raises:
-            ValueError: If message format is invalid
-        """
-        message_type = data.get("type")
-
-        if not message_type:
-            raise ValueError("Message missing 'type' field")
-
-        try:
-            msg_type = MessageType(message_type)
-        except ValueError:
-            raise ValueError(f"Unknown message type: {message_type}")
-
-        if msg_type == MessageType.OPINION_REQUEST:
-            await self._handle_opinion_request(websocket, meeting_id, data)
-        elif msg_type == MessageType.OPINION:
-            await self._handle_opinion(websocket, meeting_id, data)
-        elif msg_type == MessageType.CONSENSUS_REQUEST:
-            await self._handle_consensus_request(websocket, meeting_id, data)
-        elif msg_type == MessageType.CONSENSUS_VOTE:
-            await self._handle_consensus_vote(websocket, meeting_id, data)
-        else:
-            raise ValueError(f"Unhandled message type: {message_type}")
 
     async def _handle_opinion_request(
-        self, websocket: WebSocket, meeting_id: UUID, auth: Union[User, Agent], data: dict
+        self, websocket: WebSocket, meeting_id: UUID, auth: User | Agent, data: dict
     ) -> None:
         """
         Handle an opinion request message.
@@ -257,7 +258,7 @@ class WebSocketHandler:
         )
 
     async def _handle_opinion(
-        self, websocket: WebSocket, meeting_id: UUID, auth: Union[User, Agent], data: dict
+        self, websocket: WebSocket, meeting_id: UUID, auth: User | Agent, data: dict
     ) -> None:
         """
         Handle an opinion message.
@@ -296,7 +297,7 @@ class WebSocketHandler:
         )
 
     async def _handle_consensus_request(
-        self, websocket: WebSocket, meeting_id: UUID, auth: Union[User, Agent], data: dict
+        self, websocket: WebSocket, meeting_id: UUID, auth: User | Agent, data: dict
     ) -> None:
         """
         Handle a consensus request message.
@@ -335,7 +336,7 @@ class WebSocketHandler:
         )
 
     async def _handle_consensus_vote(
-        self, websocket: WebSocket, meeting_id: UUID, auth: Union[User, Agent], data: dict
+        self, websocket: WebSocket, meeting_id: UUID, auth: User | Agent, data: dict
     ) -> None:
         """
         Handle a consensus vote message.
@@ -372,3 +373,235 @@ class WebSocketHandler:
                 "rationale": data.get("rationale", ""),
             },
         )
+
+    # ========================================================================
+    # Enhanced Event Broadcasting Methods
+    # ========================================================================
+
+    async def broadcast_agent_joined(
+        self, meeting_id: UUID, agent_id: str, participant_name: str
+    ) -> None:
+        """
+        Broadcast an agent_joined event to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+            agent_id: Agent who joined
+            participant_name: Display name of the agent
+        """
+        event = MeetingEvent(
+            event_type=MessageType.AGENT_JOINED,
+            meeting_id=meeting_id,
+            agent_id=agent_id,
+            data={"participant_name": participant_name},
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())
+
+    async def broadcast_opinion_presented(
+        self, meeting_id: UUID, agent_id: str, opinion: str, round_number: int = 1
+    ) -> None:
+        """
+        Broadcast an opinion_presented event to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+            agent_id: Agent presenting opinion
+            opinion: The opinion content
+            round_number: Current discussion round
+        """
+        event = MeetingEvent(
+            event_type=MessageType.OPINION_PRESENTED,
+            meeting_id=meeting_id,
+            agent_id=agent_id,
+            data={
+                "opinion": opinion,
+                "round_number": round_number,
+            },
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())
+
+    async def broadcast_consensus_reached(
+        self, meeting_id: UUID, consensus_option: str, votes: dict[str, str]
+    ) -> None:
+        """
+        Broadcast a consensus_reached event to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+            consensus_option: The option that reached consensus
+            votes: Dictionary of all votes
+        """
+        event = MeetingEvent(
+            event_type=MessageType.CONSENSUS_REACHED,
+            meeting_id=meeting_id,
+            data={
+                "consensus_option": consensus_option,
+                "votes": votes,
+            },
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())
+
+    async def broadcast_round_started(
+        self, meeting_id: UUID, round_number: int, topic: str
+    ) -> None:
+        """
+        Broadcast a round_started event to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+            round_number: Round number
+            topic: Discussion topic for the round
+        """
+        event = MeetingEvent(
+            event_type=MessageType.ROUND_STARTED,
+            meeting_id=meeting_id,
+            data={
+                "round_number": round_number,
+                "topic": topic,
+            },
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())
+
+    async def broadcast_round_completed(
+        self,
+        meeting_id: UUID,
+        round_number: int,
+        consensus_reached: bool,
+        consensus_option: str | None = None,
+    ) -> None:
+        """
+        Broadcast a round_completed event to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+            round_number: Round number
+            consensus_reached: Whether consensus was reached
+            consensus_option: The consensus option if reached
+        """
+        event = MeetingEvent(
+            event_type=MessageType.ROUND_COMPLETED,
+            meeting_id=meeting_id,
+            data={
+                "round_number": round_number,
+                "consensus_reached": consensus_reached,
+                "consensus_option": consensus_option,
+            },
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())
+
+    async def broadcast_discussion_paused(self, meeting_id: UUID, reason: str) -> None:
+        """
+        Broadcast a discussion_paused event to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+            reason: Reason for pausing
+        """
+        event = MeetingEvent(
+            event_type=MessageType.DISCUSSION_PAUSED,
+            meeting_id=meeting_id,
+            data={"reason": reason},
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())
+
+    async def broadcast_discussion_resumed(self, meeting_id: UUID) -> None:
+        """
+        Broadcast a discussion_resumed event to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+        """
+        event = MeetingEvent(
+            event_type=MessageType.DISCUSSION_RESUMED,
+            meeting_id=meeting_id,
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())
+
+    # ========================================================================
+    # Reconnection Handling
+    # ========================================================================
+
+    async def handle_reconnect(
+        self, websocket: WebSocket, meeting_id: UUID, agent_id: str, last_sequence: int = 0
+    ) -> bool:
+        """
+        Handle a reconnection attempt from an agent.
+
+        Args:
+            websocket: WebSocket connection
+            meeting_id: Meeting ID
+            agent_id: Agent attempting to reconnect
+            last_sequence: Last message sequence number the agent received
+
+        Returns:
+            True if reconnection successful, False otherwise
+        """
+        # Check if meeting exists and is active
+        participants = self._manager.get_participants(meeting_id)
+        if not participants:
+            logger.warning(f"Reconnection failed: no participants for meeting {meeting_id}")
+            return False
+
+        # Log reconnection for monitoring
+        logger.info(
+            f"Agent {agent_id} reconnecting to meeting {meeting_id} from sequence {last_sequence}"
+        )
+
+        # Send state sync with recent messages
+        await self._send_state_sync(websocket, meeting_id, last_sequence)
+
+        return True
+
+    async def _send_state_sync(
+        self, websocket: WebSocket, meeting_id: UUID, since_sequence: int
+    ) -> None:
+        """
+        Send state synchronization message to a reconnecting client.
+
+        Args:
+            websocket: WebSocket connection
+            meeting_id: Meeting ID
+            since_sequence: Only send messages after this sequence
+        """
+        # Get current state
+        participants = self._manager.get_participants(meeting_id)
+        participant_names = [self._get_participant_name(p) for p in participants]
+
+        # Create state sync message
+        state_sync = {
+            "type": MessageType.STATE_SYNC.value,
+            "meeting_id": str(meeting_id),
+            "timestamp": datetime.utcnow().isoformat(),
+            "data": {
+                "current_participants": participant_names,
+                "connection_count": self._manager.get_connection_count(meeting_id),
+                "last_sequence": since_sequence,
+            },
+        }
+
+        await self._manager.send_personal_message(state_sync, websocket)
+
+    async def broadcast_meeting_state(
+        self, meeting_id: UUID, discussion_state: DiscussionState
+    ) -> None:
+        """
+        Broadcast full meeting state to all participants.
+
+        Args:
+            meeting_id: Meeting ID
+            discussion_state: Current discussion state
+        """
+        state_data = {
+            "current_round": discussion_state.current_round,
+            "max_rounds": discussion_state.max_rounds,
+            "current_speaker": discussion_state.current_speaker,
+            "participant_count": len(discussion_state.participants),
+            "consensus_threshold": discussion_state.consensus_threshold,
+        }
+
+        event = MeetingEvent(
+            event_type=MessageType.STATE_SYNC,
+            meeting_id=meeting_id,
+            data=state_data,
+        )
+        await self._manager.broadcast_to_meeting(meeting_id, event.to_dict())

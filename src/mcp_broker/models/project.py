@@ -7,11 +7,8 @@ including project definitions, API keys, metadata, and configuration.
 
 from datetime import UTC, datetime
 from typing import Literal
-from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
-
-from mcp_broker.models.protocol import ProtocolInfo
 
 
 class ProjectAPIKey(BaseModel):
@@ -207,6 +204,9 @@ class ProjectDefinition(BaseModel):
     def validate_project_id_not_reserved(cls, v: str) -> str:
         """Validate project_id is not a reserved word.
 
+        Note: "default" is allowed for backward compatibility with
+        single-project to multi-project migration.
+
         Args:
             v: Project ID to validate
 
@@ -216,7 +216,8 @@ class ProjectDefinition(BaseModel):
         Raises:
             ValueError: If project_id is reserved
         """
-        reserved = {"default", "system", "admin", "root"}
+        # "default" is allowed for the default project (backward compatibility)
+        reserved = {"system", "admin", "root"}
         if v.lower() in reserved:
             raise ValueError(
                 f"Project ID '{v}' is reserved. "

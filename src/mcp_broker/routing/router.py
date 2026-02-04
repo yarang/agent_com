@@ -4,10 +4,13 @@ Message Router for MCP Broker Server.
 This module provides the MessageRouter class responsible for
 routing messages between sessions using point-to-point and
 broadcast patterns.
+
+Supports project-scoped message routing with per-project
+statistics tracking.
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from mcp_broker.core.logging import get_logger
@@ -16,11 +19,77 @@ from mcp_broker.models.message import (
     DeliveryResult,
     Message,
 )
-from mcp_broker.models.session import Session
 
 if TYPE_CHECKING:
     from mcp_broker.session.manager import SessionManager
     from mcp_broker.storage.interface import StorageBackend
+
+
+class MessageStatistics:
+    """Message statistics for a project.
+
+    Attributes:
+        total_sent: Total messages sent
+        total_delivered: Total messages successfully delivered
+        total_queued: Total messages queued for offline sessions
+        total_failed: Total messages that failed to deliver
+        total_broadcast: Total broadcast messages sent
+        last_activity: Timestamp of last message activity
+    """
+
+    def __init__(self) -> None:
+        """Initialize message statistics."""
+        self.total_sent: int = 0
+        self.total_delivered: int = 0
+        self.total_queued: int = 0
+        self.total_failed: int = 0
+        self.total_broadcast: int = 0
+        self.last_activity: datetime | None = None
+
+    def record_sent(self) -> None:
+        """Record a message send attempt."""
+        self.total_sent += 1
+        self.last_activity = datetime.now(UTC)
+
+    def record_delivered(self) -> None:
+        """Record a successful message delivery."""
+        self.total_delivered += 1
+        self.last_activity = datetime.now(UTC)
+
+    def record_queued(self) -> None:
+        """Record a message queued for offline session."""
+        self.total_queued += 1
+        self.last_activity = datetime.now(UTC)
+
+    def record_failed(self) -> None:
+        """Record a failed message delivery."""
+        self.total_failed += 1
+        self.last_activity = datetime.now(UTC)
+
+    def record_broadcast(self, recipient_count: int) -> None:
+        """Record a broadcast message.
+
+        Args:
+            recipient_count: Number of recipients in broadcast
+        """
+        self.total_broadcast += 1
+        self.total_sent += recipient_count
+        self.last_activity = datetime.now(UTC)
+
+    def to_dict(self) -> dict:
+        """Convert statistics to dictionary.
+
+        Returns:
+            Dictionary representation of statistics
+        """
+        return {
+            "total_sent": self.total_sent,
+            "total_delivered": self.total_delivered,
+            "total_queued": self.total_queued,
+            "total_failed": self.total_failed,
+            "total_broadcast": self.total_broadcast,
+            "last_activity": self.last_activity.isoformat() if self.last_activity else None,
+        }
 
 
 class MessageRouter:
@@ -32,10 +101,12 @@ class MessageRouter:
     - Broadcast (1:N) message delivery
     - Message queuing for offline recipients
     - Delivery confirmation and error handling
+    - Per-project message statistics tracking
 
     Attributes:
         session_manager: Session manager for session access
         storage: Storage backend for persistence
+        _statistics: Per-project message statistics
     """
 
     def __init__(
@@ -52,9 +123,43 @@ class MessageRouter:
         self._session_manager = session_manager
         self._storage = storage
         self._dead_letter_queue: list[dict] = []
+        self._statistics: dict[str, MessageStatistics] = {}
 
         logger = get_logger(__name__)
         logger.info("MessageRouter initialized")
+
+    def _get_statistics(self, project_id: str) -> MessageStatistics:
+        """Get or create statistics for a project.
+
+        Args:
+            project_id: Project identifier
+
+        Returns:
+            MessageStatistics for the project
+        """
+        if project_id not in self._statistics:
+            self._statistics[project_id] = MessageStatistics()
+        return self._statistics[project_id]
+
+    def get_project_statistics(self, project_id: str) -> dict | None:
+        """Get message statistics for a project.
+
+        Args:
+            project_id: Project identifier
+
+        Returns:
+            Dictionary of statistics or None if project not found
+        """
+        stats = self._statistics.get(project_id)
+        return stats.to_dict() if stats else None
+
+    def get_all_statistics(self) -> dict[str, dict]:
+        """Get message statistics for all projects.
+
+        Returns:
+            Dictionary mapping project_id to statistics
+        """
+        return {project_id: stats.to_dict() for project_id, stats in self._statistics.items()}
 
     async def send_message(
         self,
@@ -75,10 +180,13 @@ class MessageRouter:
             DeliveryResult with delivery status
         """
         logger = get_logger(__name__)
+        stats = self._get_statistics(project_id)
+        stats.record_sent()
 
         # Verify sender exists and is in the same project
         sender = await self._session_manager.get_session(sender_id, project_id)
         if not sender:
+            stats.record_failed()
             return DeliveryResult(
                 success=False,
                 error_reason=f"Sender session {sender_id} not found",
@@ -94,6 +202,7 @@ class MessageRouter:
         # Get recipient session (must be in same project)
         recipient = await self._session_manager.get_session(recipient_id, project_id)
         if not recipient:
+            stats.record_failed()
             return DeliveryResult(
                 success=False,
                 error_reason=f"Recipient session {recipient_id} not found in project '{project_id}'",
@@ -101,6 +210,7 @@ class MessageRouter:
 
         # Verify recipient belongs to the same project
         if recipient.project_id != project_id:
+            stats.record_failed()
             return DeliveryResult(
                 success=False,
                 error_reason=f"Cross-project messaging not allowed: {sender.project_id} -> {recipient.project_id}",
@@ -109,6 +219,7 @@ class MessageRouter:
         # Check compatibility
         common_protocols = sender.find_common_protocols(recipient)
         if message.protocol_name not in common_protocols:
+            stats.record_failed()
             return DeliveryResult(
                 success=False,
                 error_reason=f"Protocol mismatch: no common version for '{message.protocol_name}'",
@@ -120,6 +231,7 @@ class MessageRouter:
                 recipient_id, message, project_id
             )
             if enqueue_result.success:
+                stats.record_queued()
                 logger.info(
                     f"Message queued for offline session {recipient_id}",
                     extra={
@@ -139,6 +251,7 @@ class MessageRouter:
                 )
             else:
                 # Queue full - move to dead letter queue
+                stats.record_failed()
                 self._dead_letter_queue.append(
                     {
                         "message": message.model_dump(),
@@ -163,6 +276,7 @@ class MessageRouter:
         )
 
         if enqueue_result.success:
+            stats.record_delivered()
             logger.info(
                 f"Message delivered: {message.message_id} from {sender_id} to {recipient_id}",
                 extra={
@@ -181,6 +295,7 @@ class MessageRouter:
                 message_id=message.message_id,
             )
         else:
+            stats.record_failed()
             return DeliveryResult(
                 success=False,
                 error_reason=enqueue_result.error_reason,
@@ -206,10 +321,12 @@ class MessageRouter:
             BroadcastResult with delivery summary
         """
         logger = get_logger(__name__)
+        stats = self._get_statistics(project_id)
 
         # Get sender (must be in the project)
         sender = await self._session_manager.get_session(sender_id, project_id)
         if not sender:
+            stats.record_failed()
             return BroadcastResult(
                 success=False,
                 reason=f"Sender session {sender_id} not found in project '{project_id}'",
@@ -292,18 +409,14 @@ class MessageRouter:
                 sender_id, recipient.session_id, recipient_message, project_id
             )
 
-            if result.success:
-                delivered.append(recipient.session_id)
-            elif result.queued:
+            if result.success or result.queued:
                 delivered.append(recipient.session_id)
             else:
                 failed.append(recipient.session_id)
 
         # Include incompatible sessions in skipped
         incompatible = [
-            s.session_id
-            for s in recipients
-            if s.session_id not in compatible_recipients
+            s.session_id for s in recipients if s.session_id not in compatible_recipients
         ]
         skipped.extend(incompatible)
         skipped.append(sender_id)
@@ -321,6 +434,9 @@ class MessageRouter:
                 }
             },
         )
+
+        # Record broadcast statistics
+        stats.record_broadcast(len(delivered))
 
         return BroadcastResult(
             success=True,

@@ -1,311 +1,259 @@
-# MoAI Execution Directive
+# Chat Service - Multi-Agent Orchestration Platform
 
-## 1. Core Identity
+## 프로젝트 개요
 
-MoAI is the Strategic Orchestrator for Claude Code. All tasks must be delegated to specialized agents.
+**목적**: AI Agent 간 협업을 조율하는 프로젝트 기반 실시간 채팅 시스템  
+**상태**: 신규 프로젝트 - 구현 시작 전  
+**우선순위**: Phase별 점진적 구현 (Phase 0 → Phase 7)
 
-### HARD Rules (Mandatory)
+## 핵심 목표
 
-- [HARD] Language-Aware Responses: All user-facing responses MUST be in user's conversation_language
-- [HARD] Parallel Execution: Execute all independent tool calls in parallel when no dependencies exist
-- [HARD] No XML in User Responses: Never display XML tags in user-facing responses
-- [HARD] Markdown Output: Use Markdown for all user-facing communication
+1. ✅ **프로젝트 기반 컨텍스트 관리**: 모든 Chat Room은 Project에 속하며 공유 컨텍스트 유지
+2. ✅ **Orchestrator 중재 시스템**: Agent 간 메시지 라우팅, 작업 할당, 충돌 해결
+3. ✅ **실시간 WebSocket 통신**: 양방향 실시간 메시징
+4. ✅ **지능형 Task 관리**: 자동 작업 분배 및 의존성 관리
 
-### Recommendations
+## 기술 스택
 
-- Agent delegation recommended for complex tasks requiring specialized expertise
-- Direct tool usage permitted for simpler operations
-- Appropriate Agent Selection: Optimal agent matched to each task
+### Backend
+- **언어**: Python 3.11+
+- **프레임워크**: FastAPI 0.104+
+- **ORM**: SQLAlchemy 2.0+ (Async)
+- **데이터베이스**: PostgreSQL 15+
+- **캐싱**: Redis 6+
+- **실시간**: WebSocket (FastAPI built-in)
 
----
+### 인증 & 보안
+- **JWT**: python-jose
+- **비밀번호**: passlib[bcrypt]
 
-## 2. Request Processing Pipeline
+### 개발 도구
+- **마이그레이션**: Alembic
+- **테스트**: pytest, pytest-asyncio
+- **코드 품질**: black, flake8, mypy
 
-### Phase 1: Analyze
-
-Analyze user request to determine routing:
-
-- Assess complexity and scope of the request
-- Detect technology keywords for agent matching (framework names, domain terms)
-- Identify if clarification is needed before delegation
-
-Core Skills (load when needed):
-
-- Skill("moai-foundation-claude") for orchestration patterns
-- Skill("moai-foundation-core") for SPEC system and workflows
-- Skill("moai-workflow-project") for project management
-
-### Phase 2: Route
-
-Route request based on command type:
-
-- **Workflow Subcommands**: /moai project, /moai plan, /moai run, /moai sync
-- **Utility Subcommands**: /moai (default), /moai fix, /moai loop
-- **Feedback Subcommand**: /moai feedback
-- **Direct Agent Requests**: Immediate delegation when user explicitly requests an agent
-
-### Phase 3: Execute
-
-Execute using explicit agent invocation:
-
-- "Use the expert-backend subagent to develop the API"
-- "Use the manager-ddd subagent to implement with DDD approach"
-- "Use the Explore subagent to analyze the codebase structure"
-
-### Phase 4: Report
-
-Integrate and report results:
-
-- Consolidate agent execution results
-- Format response in user's conversation_language
-
----
-
-## 3. Command Reference
-
-### Unified Skill: /moai
-
-Definition: Single entry point for all MoAI development workflows.
-
-Subcommands: plan, run, sync, project, fix, loop, feedback
-Default (natural language): Routes to autonomous workflow (plan -> run -> sync pipeline)
-
-Allowed Tools: Full access (Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, Bash, Read, Write, Edit, Glob, Grep)
-
----
-
-## 4. Agent Catalog
-
-### Selection Decision Tree
-
-1. Read-only codebase exploration? Use the Explore subagent
-2. External documentation or API research? Use WebSearch, WebFetch, Context7 MCP tools
-3. Domain expertise needed? Use the expert-[domain] subagent
-4. Workflow coordination needed? Use the manager-[workflow] subagent
-5. Complex multi-step tasks? Use the manager-strategy subagent
-
-### Manager Agents (7)
-
-- manager-spec: SPEC document creation, EARS format, requirements analysis
-- manager-ddd: Domain-driven development, ANALYZE-PRESERVE-IMPROVE cycle
-- manager-docs: Documentation generation, Nextra integration
-- manager-quality: Quality gates, TRUST 5 validation, code review
-- manager-project: Project configuration, structure management
-- manager-strategy: System design, architecture decisions
-- manager-git: Git operations, branching strategy, merge management
-
-### Expert Agents (9)
-
-- expert-backend: API development, server-side logic, database integration
-- expert-frontend: React components, UI implementation, client-side code
-- expert-stitch: UI/UX design using Google Stitch MCP
-- expert-security: Security analysis, vulnerability assessment, OWASP compliance
-- expert-devops: CI/CD pipelines, infrastructure, deployment automation
-- expert-performance: Performance optimization, profiling
-- expert-debug: Debugging, error analysis, troubleshooting
-- expert-testing: Test creation, test strategy, coverage improvement
-- expert-refactoring: Code refactoring, architecture improvement
-
-### Builder Agents (4)
-
-- builder-agent: Create new agent definitions
-- builder-command: Create new slash commands
-- builder-skill: Create new skills
-- builder-plugin: Create new plugins
-
----
-
-## 5. SPEC-Based Workflow
-
-MoAI uses DDD (Domain-Driven Development) as its development methodology.
-
-### MoAI Command Flow
-
-- /moai plan "description" → manager-spec subagent
-- /moai run SPEC-XXX → manager-ddd subagent (ANALYZE-PRESERVE-IMPROVE)
-- /moai sync SPEC-XXX → manager-docs subagent
-
-For detailed workflow specifications, see @.claude/rules/moai/workflow/spec-workflow.md
-
-### Agent Chain for SPEC Execution
-
-- Phase 1: manager-spec → understand requirements
-- Phase 2: manager-strategy → create system design
-- Phase 3: expert-backend → implement core features
-- Phase 4: expert-frontend → create user interface
-- Phase 5: manager-quality → ensure quality standards
-- Phase 6: manager-docs → create documentation
-
----
-
-## 6. Quality Gates
-
-For TRUST 5 framework details, see @.claude/rules/moai/core/moai-constitution.md
-
-### LSP Quality Gates
-
-MoAI-ADK implements LSP-based quality gates:
-
-**Phase-Specific Thresholds:**
-- **plan**: Capture LSP baseline at phase start
-- **run**: Zero errors, zero type errors, zero lint errors required
-- **sync**: Zero errors, max 10 warnings, clean LSP required
-
-**Configuration:** @.moai/config/sections/quality.yaml
-
----
-
-## 7. User Interaction Architecture
-
-### Critical Constraint
-
-Subagents invoked via Task() operate in isolated, stateless contexts and cannot interact with users directly.
-
-### Correct Workflow Pattern
-
-- Step 1: MoAI uses AskUserQuestion to collect user preferences
-- Step 2: MoAI invokes Task() with user choices in the prompt
-- Step 3: Subagent executes based on provided parameters
-- Step 4: Subagent returns structured response
-- Step 5: MoAI uses AskUserQuestion for next decision
-
-### AskUserQuestion Constraints
-
-- Maximum 4 options per question
-- No emoji characters in question text, headers, or option labels
-- Questions must be in user's conversation_language
-
----
-
-## 8. Configuration Reference
-
-User and language configuration:
-
-@.moai/config/sections/user.yaml
-@.moai/config/sections/language.yaml
-
-### Project Rules
-
-MoAI-ADK uses Claude Code's official rules system at `.claude/rules/moai/`:
-
-- **Core rules**: TRUST 5 framework, documentation standards
-- **Workflow rules**: Progressive disclosure, token budget, workflow modes
-- **Development rules**: Skill frontmatter schema, tool permissions
-- **Language rules**: Path-specific rules for 16 programming languages
-
-### Language Rules
-
-- User Responses: Always in user's conversation_language
-- Internal Agent Communication: English
-- Code Comments: Per code_comments setting (default: English)
-- Commands, Agents, Skills Instructions: Always English
-
----
-
-## 9. Web Search Protocol
-
-For anti-hallucination policy, see @.claude/rules/moai/core/moai-constitution.md
-
-### Execution Steps
-
-1. Initial Search: Use WebSearch with specific, targeted queries
-2. URL Validation: Use WebFetch to verify each URL
-3. Response Construction: Only include verified URLs with sources
-
-### Prohibited Practices
-
-- Never generate URLs not found in WebSearch results
-- Never present information as fact when uncertain
-- Never omit "Sources:" section when WebSearch was used
-
----
-
-## 10. Error Handling
-
-### Error Recovery
-
-- Agent execution errors: Use expert-debug subagent
-- Token limit errors: Execute /clear, then guide user to resume
-- Permission errors: Review settings.json manually
-- Integration errors: Use expert-devops subagent
-- MoAI-ADK errors: Suggest /moai feedback
-
-### Resumable Agents
-
-Resume interrupted agent work using agentId:
-
-- "Resume agent abc123 and continue the security analysis"
-
----
-
-## 11. Sequential Thinking & UltraThink
-
-For detailed usage patterns and examples, see Skill("moai-workflow-thinking").
-
-### Activation Triggers
-
-Use Sequential Thinking MCP for:
-
-- Breaking down complex problems into steps
-- Architecture decisions affecting 3+ files
-- Technology selection between multiple options
-- Performance vs maintainability trade-offs
-- Breaking changes under consideration
-
-### UltraThink Mode
-
-Activate with `--ultrathink` flag for enhanced analysis:
+## 프로젝트 구조
 
 ```
-"Implement authentication system --ultrathink"
+chat-service/
+├── app/
+│   ├── main.py                 # FastAPI 앱 진입점
+│   ├── config.py               # 환경 설정
+│   ├── database.py             # DB 연결 설정
+│   │
+│   ├── models/                 # SQLAlchemy 모델
+│   │   ├── project.py          # Project, ProjectContext
+│   │   ├── member.py           # ProjectMember
+│   │   ├── room.py             # ChatRoom
+│   │   ├── message.py          # ChatMessage
+│   │   └── task.py             # Task
+│   │
+│   ├── schemas/                # Pydantic 스키마
+│   │   ├── project.py
+│   │   ├── room.py
+│   │   ├── message.py
+│   │   └── task.py
+│   │
+│   ├── api/                    # API 엔드포인트
+│   │   ├── projects.py         # Project CRUD
+│   │   ├── rooms.py            # Room 관리
+│   │   ├── messages.py         # Message 처리
+│   │   ├── tasks.py            # Task 관리
+│   │   └── websocket.py        # WebSocket 엔드포인트
+│   │
+│   ├── services/               # 비즈니스 로직
+│   │   ├── project_service.py
+│   │   ├── room_service.py
+│   │   ├── message_service.py
+│   │   ├── task_service.py
+│   │   └── orchestrator_service.py
+│   │
+│   ├── orchestrator/           # Orchestrator 시스템
+│   │   ├── base.py             # OrchestratorAgent 클래스
+│   │   ├── intent_analyzer.py  # 메시지 의도 분석
+│   │   ├── scorer.py           # Agent 평가 엔진
+│   │   └── router.py           # 메시지 라우팅
+│   │
+│   ├── websocket/              # WebSocket 관리
+│   │   ├── manager.py          # ConnectionManager
+│   │   └── handlers.py         # 이벤트 핸들러
+│   │
+│   └── utils/                  # 유틸리티
+│       ├── auth.py             # JWT 인증
+│       └── helpers.py
+│
+├── alembic/                    # DB 마이그레이션
+├── tests/                      # 테스트
+│   ├── unit/
+│   └── integration/
+│
+├── .env.example
+├── requirements.txt
+├── CLAUDE.md                   # 이 파일
+├── TASKS.md                    # 상세 작업 지침
+└── README.md
 ```
 
----
+## 아키텍처 계층
 
-## 12. Progressive Disclosure System
+```
+┌──────────────────────────────────────────┐
+│         Project Context Layer            │  ← 공유 컨텍스트, 파일, 목표
+├──────────────────────────────────────────┤
+│      Orchestrator (Moderator) Layer      │  ← 메시지 라우팅, Task 할당
+├──────────────────────────────────────────┤
+│           Chat Room Layer                │  ← 실시간 메시징, WebSocket
+├──────────────────────────────────────────┤
+│         Service Layer                    │  ← 비즈니스 로직
+├──────────────────────────────────────────┤
+│         Data Layer (SQLAlchemy)          │  ← 데이터 영속화
+└──────────────────────────────────────────┘
+```
 
-MoAI-ADK implements a 3-level Progressive Disclosure system:
+## 개발 규칙
 
-**Level 1** (Metadata): ~100 tokens per skill, always loaded
-**Level 2** (Body): ~5K tokens, loaded when triggers match
-**Level 3** (Bundled): On-demand, Claude decides when to access
+### 코딩 스타일
+- **PEP 8 준수**: Black 자동 포맷팅 사용
+- **타입 힌트 필수**: 모든 함수에 타입 힌트 추가
+- **Docstrings**: Google 스타일 docstring
+- **네이밍**:
+  - 함수/변수: `snake_case`
+  - 클래스: `PascalCase`
+  - 상수: `UPPER_SNAKE_CASE`
+  - Private: `_leading_underscore`
 
-### Benefits
+### 비동기 처리
+- **SQLAlchemy**: 모든 DB 작업은 async/await
+- **Service 메서드**: `async def` 필수
+- **API 핸들러**: `async def` 필수
+- **WebSocket**: async 처리
 
-- 67% reduction in initial token load
-- On-demand loading of full skill content
-- Backward compatible with existing definitions
+### 에러 처리
+- **HTTPException**: FastAPI 표준 예외 사용
+- **명확한 상태 코드**: 400, 401, 403, 404, 409, 500
+- **에러 메시지**: 사용자 친화적이고 구체적으로
+- **로깅**: 모든 에러는 로그 기록
 
----
+### 데이터베이스
+- **마이그레이션**: 모든 스키마 변경은 Alembic 사용
+- **관계**: ForeignKey, relationship 명확히 정의
+- **인덱스**: 자주 쿼리되는 필드에 인덱스 추가
+- **UUID**: 모든 Primary Key는 UUID 사용
 
-## 13. Parallel Execution Safeguards
+### 테스트
+- **커버리지 목표**: 80% 이상
+- **단위 테스트**: 모든 service 메서드
+- **통합 테스트**: API 엔드포인트, WebSocket
+- **Fixtures**: pytest fixture 적극 활용
 
-### File Write Conflict Prevention
+## 현재 상태
 
-**Pre-execution Checklist**:
-1. File Access Analysis: Identify overlapping file access patterns
-2. Dependency Graph Construction: Map agent-to-agent dependencies
-3. Execution Mode Selection: Parallel, Sequential, or Hybrid
+### ✅ 완료
+- 프로젝트 구조 설계 완료
+- 아키텍처 정의 완료
+- 작업 지침 문서화 완료
 
-### Agent Tool Requirements
+### 🚧 진행 중
+- Phase 0: 환경 설정 (다음 단계)
 
-All implementation agents MUST include: Read, Write, Edit, Grep, Glob, Bash, TaskCreate, TaskUpdate, TaskList, TaskGet
+### 📋 예정
+- Phase 1-7: 순차적 구현
 
-### Loop Prevention Guards
+## 다음 단계
 
-- Maximum 3 retries per operation
-- Failure pattern detection
-- User intervention after repeated failures
+**현재 Phase**: Phase 0 - 환경 설정
 
-### Platform Compatibility
+### Phase 0 작업 순서
+1. **Task 0.1**: requirements.txt 생성
+2. **Task 0.2**: .env.example 및 .env 생성
+3. **Task 0.3**: app/main.py 생성 (FastAPI 앱)
+4. **Task 0.4**: app/database.py 생성 (DB 설정)
+5. **Task 0.5**: Alembic 초기화
 
-Always prefer Edit tool over sed/awk for cross-platform compatibility.
+각 Task의 상세 지침은 `TASKS.md` 참조
 
----
+## 중요 참고사항
 
-Version: 11.0.0 (Alfred to MoAI rename, unified /moai command structure)
-Last Updated: 2026-01-28
-Language: English
-Core Rule: MoAI is an orchestrator; direct implementation is prohibited
+### Orchestrator 동작 방식
+1. **메시지 수신** → IntentAnalyzer가 의도 파악
+2. **라우팅 결정**:
+   - Question → 전문성 있는 Agent에게
+   - Task Request → Task 생성 후 최적 Agent 할당
+   - Agent Mention → 언급된 Agent에게 직접 전달
+   - General → 전체 브로드캐스트
 
-For detailed patterns on plugins, sandboxing, headless mode, and version management, see Skill("moai-foundation-claude").
+### WebSocket 프로토콜
+- **Client → Server**: `{"type": "message", "content": "..."}`
+- **Server → Client**: `{"type": "message", "message": {...}}`
+- **Heartbeat**: 30초마다 ping/pong
+
+### Task 생애주기
+```
+pending → in_progress → review → completed
+         ↓
+      blocked (의존성 미완료)
+         ↓
+      cancelled (취소)
+```
+
+## 환경 변수
+
+필수 환경 변수 (`.env` 파일):
+```bash
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/chatdb
+REDIS_URL=redis://localhost:6379/0
+JWT_SECRET_KEY=your-secret-key-here
+JWT_ALGORITHM=HS256
+CORS_ORIGINS=http://localhost:3000
+```
+
+## 빠른 시작
+
+```bash
+# 1. 가상환경 생성
+python -m venv venv
+source venv/bin/activate
+
+# 2. 의존성 설치
+pip install -r requirements.txt
+
+# 3. 환경 설정
+cp .env.example .env
+# .env 파일 수정
+
+# 4. 데이터베이스 설정
+createdb chatdb
+alembic upgrade head
+
+# 5. 서버 실행
+python app/main.py
+```
+
+## API 엔드포인트 (예정)
+
+- `POST /api/v1/projects` - 프로젝트 생성
+- `GET /api/v1/projects/{id}` - 프로젝트 조회
+- `POST /api/v1/rooms` - 채팅방 생성
+- `WS /api/v1/rooms/{id}/ws` - WebSocket 연결
+- `POST /api/v1/tasks` - Task 생성
+- `PATCH /api/v1/tasks/{id}/assign` - Task 할당
+
+전체 API 문서는 실행 후 `/docs` 참조
+
+## 문제 해결
+
+**일반적인 문제:**
+1. **DB 연결 실패** → DATABASE_URL 확인
+2. **마이그레이션 오류** → `alembic downgrade -1` 후 재시도
+3. **WebSocket 끊김** → Heartbeat 구현 확인 (Task 5.3)
+4. **Redis 연결 실패** → `redis-cli ping` 확인
+
+## 추가 문서
+
+- `TASKS.md` - 상세 작업 지침 (Phase별 Task)
+- `ARCHITECTURE.md` - 아키텍처 상세 설계
+- `README.md` - 프로젝트 소개 및 사용법
+
+## 연락처
+
+프로젝트 관련 질문이나 이슈는 GitHub Issues 활용

@@ -5,17 +5,19 @@ This module defines the six core MCP tools that expose
 broker functionality to Claude Code instances.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from mcp.types import Tool
 from pydantic import BaseModel, Field
 
+from mcp_broker.core.logging import get_logger
 from mcp_broker.models.message import Message, MessageHeaders
 from mcp_broker.models.protocol import ProtocolDefinition
-from mcp_broker.models.session import Session, SessionCapabilities
 from mcp_broker.negotiation.negotiator import ProtocolRequirement
 
+if TYPE_CHECKING:
+    from mcp_broker.mcp.server import MCPServer
 
 # Tool input schemas
 
@@ -110,7 +112,7 @@ class MCPTools:
     6. list_sessions - List active sessions
     """
 
-    def __init__(self, broker: "MCPServer") -> None:  # type: ignore
+    def __init__(self, broker: "MCPServer") -> None:
         """Initialize MCP tools with broker reference.
 
         Args:
@@ -154,6 +156,72 @@ class MCPTools:
                 name="list_sessions",
                 description="List all active sessions with their capabilities and status",
                 inputSchema=ListSessionsInput.model_json_schema(),
+            ),
+            Tool(
+                name="create_project",
+                description="Create a new project with generated API keys",
+                inputSchema={
+                    "type": "object",
+                    "required": ["project_id", "name"],
+                    "properties": {
+                        "project_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*[a-z0-9]$"},
+                        "name": {"type": "string", "minLength": 1, "maxLength": 100},
+                        "description": {"type": "string", "maxLength": 500},
+                        "max_sessions": {"type": "integer", "minimum": 1},
+                        "max_protocols": {"type": "integer", "minimum": 1},
+                        "allow_cross_project": {"type": "boolean"},
+                        "discoverable": {"type": "boolean"},
+                    },
+                },
+            ),
+            Tool(
+                name="list_projects",
+                description="List discoverable projects with public metadata",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "name_filter": {"type": "string"},
+                        "include_inactive": {"type": "boolean"},
+                        "include_stats": {"type": "boolean"},
+                    },
+                },
+            ),
+            Tool(
+                name="get_project_info",
+                description="Get detailed project information",
+                inputSchema={
+                    "type": "object",
+                    "required": ["project_id"],
+                    "properties": {
+                        "project_id": {"type": "string"},
+                        "include_config": {"type": "boolean"},
+                        "include_permissions": {"type": "boolean"},
+                    },
+                },
+            ),
+            Tool(
+                name="rotate_project_keys",
+                description="Rotate project API keys (admin only)",
+                inputSchema={
+                    "type": "object",
+                    "required": ["project_id"],
+                    "properties": {
+                        "project_id": {"type": "string"},
+                        "key_id": {"type": "string"},
+                        "grace_period_seconds": {"type": "integer", "default": 300},
+                    },
+                },
+            ),
+            Tool(
+                name="delete_project",
+                description="Delete a project (soft delete, admin only)",
+                inputSchema={
+                    "type": "object",
+                    "required": ["project_id"],
+                    "properties": {
+                        "project_id": {"type": "string"},
+                    },
+                },
             ),
         ]
 
@@ -260,16 +328,12 @@ class MCPTools:
 
         # Get target session
         target_session_id = UUID(parsed.target_session_id)
-        target_session = await self._broker.session_manager.get_session(
-            target_session_id
-        )
+        target_session = await self._broker.session_manager.get_session(target_session_id)
         if not target_session:
             return {"success": False, "error": "Target session not found"}
 
         # Get current session
-        current_session = await self._broker.session_manager.get_session(
-            current_session_id
-        )
+        current_session = await self._broker.session_manager.get_session(current_session_id)
         if not current_session:
             return {"success": False, "error": "Current session not found"}
 
@@ -282,9 +346,7 @@ class MCPTools:
             ]
 
         # Perform negotiation
-        result = await self._broker.negotiator.negotiate(
-            current_session, target_session, required
-        )
+        result = await self._broker.negotiator.negotiate(current_session, target_session, required)
 
         return {
             "compatible": result.compatible,
@@ -666,4 +728,49 @@ class MCPTools:
             return {
                 "success": False,
                 "error": f"Key rotation failed: {e}",
+            }
+
+    async def delete_project(self, input_data: dict[str, Any]) -> dict[str, Any]:
+        """Delete a project (soft delete, admin only).
+
+        Args:
+            input_data: Tool input with project_id
+
+        Returns:
+            Project deletion result
+        """
+        project_id = input_data.get("project_id")
+
+        try:
+            # Attempt to delete project
+            result = await self._broker.project_registry.delete_project(project_id=project_id)
+
+            if result:
+                logger = get_logger(__name__)
+                logger.info(
+                    f"Project deleted: {project_id}",
+                    extra={"context": {"project_id": project_id}},
+                )
+
+                return {
+                    "success": True,
+                    "project_id": project_id,
+                    "message": f"Project '{project_id}' has been deleted.",
+                }
+            else:
+                return {
+                    "success": False,
+                    "error": f"Project '{project_id}' not found",
+                }
+
+        except ValueError as e:
+            # Project has active resources
+            return {
+                "success": False,
+                "error": str(e),
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Project deletion failed: {e}",
             }

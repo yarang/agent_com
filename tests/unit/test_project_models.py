@@ -292,9 +292,7 @@ class TestProjectDefinition:
                 )
             ],
             config=ProjectConfig(max_sessions=200),
-            cross_project_permissions=[
-                CrossProjectPermission(target_project_id="other")
-            ],
+            cross_project_permissions=[CrossProjectPermission(target_project_id="other")],
         )
 
         assert project.project_id == "test_project"
@@ -314,6 +312,20 @@ class TestProjectDefinition:
                     )
                 ],
             )
+
+    def test_project_validation_default_allowed(self) -> None:
+        """Test that 'default' project ID is allowed for backward compatibility."""
+        # This should NOT raise ValidationError
+        project = ProjectDefinition(
+            project_id="default",
+            api_keys=[
+                ProjectAPIKey(
+                    key_id="default",
+                    api_key="default_default_123456789012345678901234567890",
+                )
+            ],
+        )
+        assert project.project_id == "default"
 
     def test_project_validation_no_api_keys(self) -> None:
         """Test project validation requires at least one API key."""

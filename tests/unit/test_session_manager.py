@@ -5,11 +5,10 @@ Tests session creation, heartbeat monitoring,
 message queuing, and disconnection.
 """
 
-import pytest
 from uuid import uuid4
 
 from mcp_broker.models.message import Message
-from mcp_broker.models.session import Session, SessionCapabilities
+from mcp_broker.models.session import SessionCapabilities
 from mcp_broker.session.manager import SessionManager
 from mcp_broker.storage.memory import InMemoryStorage
 
@@ -79,6 +78,7 @@ class TestSessionManager:
 
         # Small delay to ensure time difference
         import asyncio
+
         await asyncio.sleep(0.01)
 
         updated = await manager.update_heartbeat(session.session_id)
@@ -239,10 +239,11 @@ class TestSessionManager:
         session = await manager.create_session(capabilities)
 
         # Make session stale by setting old heartbeat
-        from datetime import timedelta, UTC, datetime
+        from datetime import UTC, datetime, timedelta
+
         old_hb = datetime.now(UTC) - timedelta(seconds=35)
         session.last_heartbeat = old_hb
-        await storage.save_session(session)
+        await storage.save_session(session, session.project_id)
 
         stale_sessions = await manager.check_stale_sessions()
 
@@ -266,10 +267,11 @@ class TestSessionManager:
         session = await manager.create_session(capabilities)
 
         # Make session expired by setting old heartbeat
-        from datetime import timedelta, UTC, datetime
+        from datetime import UTC, datetime, timedelta
+
         old_hb = datetime.now(UTC) - timedelta(seconds=65)
         session.last_heartbeat = old_hb
-        await storage.save_session(session)
+        await storage.save_session(session, session.project_id)
 
         disconnected = await manager.cleanup_expired_sessions()
 

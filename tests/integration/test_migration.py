@@ -5,15 +5,13 @@ Tests the migration script that creates a default project and
 ensures backward compatibility for existing deployments.
 """
 
-import pytest
 from uuid import uuid4
 
+from mcp_broker.models.message import Message
 from mcp_broker.models.protocol import ProtocolDefinition
 from mcp_broker.models.session import Session, SessionCapabilities
-from mcp_broker.models.message import Message
 from mcp_broker.project.registry import ProjectRegistry
 from mcp_broker.storage.memory import InMemoryStorage
-
 
 # Sample schema for testing
 SAMPLE_SCHEMA = {
@@ -203,7 +201,7 @@ class TestMigration:
         await storage.save_protocol(protocol)
 
         # Create new project
-        new_project = await registry.create_project(
+        _ = await registry.create_project(
             project_id="new_project",
             name="New Project",
         )
@@ -232,7 +230,7 @@ class TestMigration:
     async def test_migration_preserves_existing_behavior(self) -> None:
         """Test that migration preserves existing single-project behavior."""
         storage = InMemoryStorage()
-        registry = ProjectRegistry()
+        _ = ProjectRegistry()
 
         # Simulate existing single-project deployment
         # by creating data without project_id
@@ -305,3 +303,135 @@ class TestMigration:
         assert parts[0] == "default"
         assert api_key.key_id == "default"
         assert api_key.is_active is True
+
+
+class TestMigrationManager:
+    """Tests for MigrationManager class."""
+
+    async def test_is_migrated_false_initially(self) -> None:
+        """Test that system is not migrated initially."""
+        manager = MigrationManager(ProjectRegistry(), InMemoryStorage())  # noqa
+        assert not await manager.is_migrated()
+
+    async def test_is_migrated_true_after_migration(self) -> None:
+        """Test that system is migrated after migration."""
+        manager = MigrationManager(ProjectRegistry(), InMemoryStorage())  # noqa
+        await manager.migrate_to_default_project()
+        assert await manager.is_migrated()
+
+    async def test_migrate_to_default_project_creates_project(self) -> None:
+        """Test migration creates default project."""
+        registry = ProjectRegistry()  # noqa
+        manager = MigrationManager(registry, InMemoryStorage())  # noqa
+        stats = await manager.migrate_to_default_project()
+        project = await registry.get_project("default")
+
+        assert project is not None
+        assert project.project_id == "default"
+        assert project.metadata.name == "Default Project"
+        assert "protocols_migrated" in stats
+        assert "sessions_migrated" in stats
+
+    async def test_migration_is_idempotent(self) -> None:
+        """Test migration can be run multiple times safely."""
+        _storage = InMemoryStorage()
+        _registry = ProjectRegistry()
+        manager = MigrationManager(_registry, _storage)  # noqa
+
+        # Run migration twice
+        stats1 = await manager.migrate_to_default_project()
+        stats2 = await manager.migrate_to_default_project()
+
+        # Second migration should skip (no new migrations)
+        assert stats2["protocols_migrated"] == stats1["protocols_migrated"]
+        assert stats2["sessions_migrated"] == stats1["sessions_migrated"]
+
+    async def test_verify_migration_success(self) -> None:
+        """Test migration verification after successful migration."""
+        _storage = InMemoryStorage()
+        _registry = ProjectRegistry()
+        manager = MigrationManager(_registry, _storage)  # noqa
+
+        await manager.migrate_to_default_project()
+
+        result = await manager.verify_migration()
+
+        assert result["default_project_exists"] is True
+        assert result["protocols_accessible"] is True
+        assert result["sessions_accessible"] is True
+
+    async def test_verify_migration_storage_isolation(self) -> None:
+        """Test storage isolation verification."""
+        _storage = InMemoryStorage()
+        _registry = ProjectRegistry()
+        manager = MigrationManager(_registry, _storage)  # noqa
+
+        await manager.migrate_to_default_project()
+
+        result = await manager.verify_migration()
+
+        assert result["storage_isolated"] is True
+
+    async def test_run_migration_with_verify(self) -> None:
+        """Test run_migration function with verification enabled."""
+        _storage = InMemoryStorage()
+        _registry = ProjectRegistry()
+
+        result = await run_migration(_registry, _storage, verify=True)  # noqa
+
+        assert "migration_stats" in result
+        assert "verification" in result
+        assert result["verification"]["default_project_exists"] is True
+
+    async def test_run_migration_without_verify(self) -> None:
+        """Test run_migration function with verification disabled."""
+        _storage = InMemoryStorage()
+        _registry = ProjectRegistry()
+
+        result = await run_migration(_registry, _storage, verify=False)  # noqa
+
+        assert "migration_stats" in result
+        assert "verification" not in result
+
+    async def test_migration_preserves_existing_protocols(self) -> None:
+        """Test migration preserves existing protocol data."""
+        storage = InMemoryStorage()
+        _registry = ProjectRegistry()
+
+        # Create a protocol before migration (simulating existing deployment)
+        protocol = ProtocolDefinition(
+            name="existing_protocol",
+            version="1.0.0",
+            message_schema=SAMPLE_SCHEMA,
+            capabilities=["broadcast"],
+        )
+        await storage.save_protocol(protocol)
+
+        # Run migration
+        await run_migration(_registry, storage, verify=True)  # noqa
+
+        # Protocol should still be accessible
+        retrieved = await storage.get_protocol("existing_protocol", "1.0.0", project_id="default")
+        assert retrieved is not None
+        assert retrieved.name == "existing_protocol"
+
+    async def test_migration_preserves_existing_sessions(self) -> None:
+        """Test migration preserves existing session data."""
+        storage = InMemoryStorage()
+        _registry = ProjectRegistry()
+
+        # Create a session before migration (simulating existing deployment)
+        caps = SessionCapabilities(
+            supported_protocols={"chat": ["1.0.0"]},
+            supported_features=["point_to_point"],
+        )
+        session = Session(session_id=uuid4(), capabilities=caps)
+        await storage.save_session(session)
+
+        # Run migration
+        await run_migration(_registry, storage, verify=True)  # noqa
+
+        # Session should still be accessible
+        retrieved = await storage.get_session(session.session_id, project_id="default")
+        assert retrieved is not None
+        assert retrieved.session_id == session.session_id

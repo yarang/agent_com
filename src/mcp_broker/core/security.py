@@ -426,3 +426,274 @@ def is_mcp_config_gitignored() -> bool:
 
     except OSError:
         return False
+
+
+# =============================================================================
+# Project-Scoped Authentication
+# =============================================================================
+
+
+async def verify_project_api_key(
+    request: Request,
+) -> tuple[str, str] | None:
+    """Verify project API key and extract project and key IDs.
+
+    This function validates an API key against the project registry,
+    extracting the project_id and key_id from the key prefix format.
+
+    API key format: {project_id}_{key_id}_{secret}
+
+    Args:
+        request: Incoming HTTP request
+
+    Returns:
+        Tuple of (project_id, key_id) if valid, None otherwise
+
+    Example:
+        >>> result = await verify_project_api_key(request)
+        >>> if result:
+        ...     project_id, key_id = result
+        ...     print(f"Authenticated to {project_id} with key {key_id}")
+    """
+    from mcp_broker.project.registry import get_project_registry
+
+    # Extract API key from header or cookie
+    api_key = request.headers.get("X-API-Key") or request.cookies.get("api_key")
+
+    if not api_key:
+        return None
+
+    # Validate against project registry
+    registry = get_project_registry()
+    result = await registry.validate_api_key(api_key)
+
+    if result:
+        project_id, key_id = result
+        logger.info(
+            f"Project API key validated: {project_id}",
+            extra={
+                "context": {
+                    "project_id": project_id,
+                    "key_id": key_id,
+                    "client": str(request.client),
+                }
+            },
+        )
+    else:
+        logger.warning(
+            "Invalid project API key",
+            extra={"context": {"client": str(request.client)}},
+        )
+
+    return result
+
+
+async def verify_project_access(
+    request: Request,
+    target_project_id: str,
+) -> bool:
+    """Verify that a request can access a target project.
+
+    This function enforces project boundary validation by checking that
+    the authenticated project matches the target project. Cross-project
+    access requires explicit permission configuration.
+
+    Args:
+        request: Incoming HTTP request
+        target_project_id: Project ID being accessed
+
+    Returns:
+        True if access is allowed, False otherwise
+
+    Example:
+        >>> if not await verify_project_access(request, "target_project"):
+        ...     raise HTTPException(status_code=403, detail="Cross-project access denied")
+    """
+    # Get authenticated project ID from request state
+    request_project_id = getattr(request.state, "project_id", None)
+
+    if not request_project_id:
+        logger.warning(
+            "Project access check failed: no project in request state",
+            extra={"context": {"target_project_id": target_project_id}},
+        )
+        return False
+
+    # Same project access is always allowed
+    if request_project_id == target_project_id:
+        return True
+
+    # Check for cross-project permissions
+    from mcp_broker.project.registry import get_project_registry
+
+    registry = get_project_registry()
+    project = await registry.get_project(request_project_id)
+
+    if not project:
+        logger.warning(
+            f"Cross-project access check failed: source project not found: {request_project_id}",
+            extra={
+                "context": {
+                    "request_project_id": request_project_id,
+                    "target_project_id": target_project_id,
+                }
+            },
+        )
+        return False
+
+    # Check if cross-project communication is enabled
+    if not project.config.allow_cross_project:
+        logger.warning(
+            f"Cross-project access denied: cross-project communication disabled for {request_project_id}",
+            extra={
+                "context": {
+                    "request_project_id": request_project_id,
+                    "target_project_id": target_project_id,
+                }
+            },
+        )
+        return False
+
+    # Check for specific permission to target project
+    for permission in project.cross_project_permissions:
+        if permission.target_project_id == target_project_id:
+            logger.info(
+                f"Cross-project access allowed: {request_project_id} -> {target_project_id}",
+                extra={
+                    "context": {
+                        "request_project_id": request_project_id,
+                        "target_project_id": target_project_id,
+                    }
+                },
+            )
+            return True
+
+    logger.warning(
+        f"Cross-project access denied: no permission for {request_project_id} -> {target_project_id}",
+        extra={
+            "context": {
+                "request_project_id": request_project_id,
+                "target_project_id": target_project_id,
+            }
+        },
+    )
+    return False
+
+
+async def authorize_project_operation(
+    request: Request,
+    required_permission: str = "read",
+) -> bool:
+    """Authorize a project-level operation.
+
+    This function checks if the authenticated project has permission
+    to perform the requested operation.
+
+    Args:
+        request: Incoming HTTP request
+        required_permission: Permission level required ("read", "write", "admin")
+
+    Returns:
+        True if authorized, False otherwise
+
+    Note:
+        This is a simplified authorization model. Future implementations
+        may include role-based access control (RBAC) and fine-grained permissions.
+    """
+    # Get authenticated project from request state
+    project_id = getattr(request.state, "project_id", None)
+
+    if not project_id:
+        return False
+
+    # Get project definition
+    from mcp_broker.project.registry import get_project_registry
+
+    registry = get_project_registry()
+    project = await registry.get_project(project_id)
+
+    if not project:
+        return False
+
+    # Check if project is active
+    if not project.is_active():
+        logger.warning(
+            f"Authorization failed: project is not active: {project_id}",
+            extra={"context": {"project_id": project_id, "status": project.status.status}},
+        )
+        return False
+
+    # For now, all active projects have all permissions
+    # Future: implement role-based permissions
+    logger.debug(
+        f"Project authorized: {project_id} for {required_permission}",
+        extra={"context": {"project_id": project_id, "permission": required_permission}},
+    )
+    return True
+
+
+class ProjectSecurityContext(SecurityContext):
+    """
+    Extended security context with project information.
+
+    This extends the base SecurityContext to include project
+    identification and project-specific authorization.
+
+    Attributes:
+        project_id: Project identifier for this context
+        key_id: API key identifier used for authentication
+        has_project_access: Whether project access is granted
+    """
+
+    def __init__(
+        self,
+        authenticated: bool = False,
+        session_id: UUID | None = None,
+        project_id: str | None = None,
+        key_id: str | None = None,
+    ):
+        """Initialize project security context.
+
+        Args:
+            authenticated: Whether the request is authenticated
+            session_id: Optional session identifier
+            project_id: Project identifier
+            key_id: API key identifier
+        """
+        super().__init__(authenticated=authenticated, session_id=session_id)
+        self.project_id = project_id
+        self.key_id = key_id
+        self.has_project_access = bool(project_id)
+
+    def can_access_project(self, target_project_id: str) -> bool:
+        """Check if this context can access a target project.
+
+        Args:
+            target_project_id: Project to access
+
+        Returns:
+            True if access is allowed
+        """
+        # Same project access is always allowed
+        if self.project_id == target_project_id:
+            return True
+
+        # Cross-project access requires explicit permissions
+        # This is a simplified check - full implementation would query registry
+        return False
+
+    def to_dict(self) -> dict:
+        """Convert context to dictionary for logging.
+
+        Returns:
+            Dictionary representation of context
+        """
+        base_dict = {
+            "authenticated": self.authenticated,
+            "session_id": str(self.session_id) if self.session_id else None,
+            "project_id": self.project_id,
+            "key_id": self.key_id,
+            "has_project_access": self.has_project_access,
+            "age_seconds": self.age_seconds(),
+        }
+        return base_dict

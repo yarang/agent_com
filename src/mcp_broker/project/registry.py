@@ -7,18 +7,14 @@ project definitions, API keys, and project-scoped storage.
 
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import cast
 
 from mcp_broker.core.logging import get_logger
 from mcp_broker.models.project import (
-    CrossProjectPermission,
     ProjectAPIKey,
     ProjectConfig,
     ProjectDefinition,
     ProjectInfo,
     ProjectMetadata,
-    ProjectStatistics,
-    ProjectStatus,
 )
 
 logger = get_logger(__name__)
@@ -161,14 +157,14 @@ class ProjectRegistry:
         self,
         name_filter: str | None = None,
         include_inactive: bool = False,
-        include_stats: bool = False,
+        _include_stats: bool = False,
     ) -> list[ProjectInfo]:
         """List projects with optional filtering.
 
         Args:
             name_filter: Optional partial name match filter
             include_inactive: Whether to include inactive projects
-            include_stats: Whether to include full statistics
+            _include_stats: Whether to include full statistics (reserved for future use)
 
         Returns:
             List of project information (public view)
@@ -181,13 +177,13 @@ class ProjectRegistry:
 
         # Filter by name
         if name_filter:
-            projects = [
-                p for p in projects if name_filter.lower() in p.metadata.name.lower()
-            ]
+            projects = [p for p in projects if name_filter.lower() in p.metadata.name.lower()]
 
         # Convert to public info
         result = [
-            ProjectInfo.from_definition(p) for p in projects if p.metadata.discoverable or p.config.discoverable
+            ProjectInfo.from_definition(p)
+            for p in projects
+            if p.metadata.discoverable or p.config.discoverable
         ]
 
         logger.debug(
@@ -238,6 +234,7 @@ class ProjectRegistry:
 
         # Update last modified
         from copy import deepcopy
+
         old_status = project.status
         project.status = deepcopy(old_status)
         project.status.last_modified = datetime.now(UTC)
@@ -267,9 +264,7 @@ class ProjectRegistry:
 
         # Check if project can be deleted
         if project.statistics.session_count > 0:
-            raise ValueError(
-                f"Cannot delete project '{project_id}' with active sessions"
-            )
+            raise ValueError(f"Cannot delete project '{project_id}' with active sessions")
 
         # Delete project
         del self._projects[project_id]
@@ -294,7 +289,8 @@ class ProjectRegistry:
             Tuple of (project_id, key_id) if valid, None otherwise
         """
         try:
-            parts = api_key.split("_", 2)
+            # Split from right to handle project_ids with underscores
+            parts = api_key.rsplit("_", 2)
             if len(parts) != 3:
                 return None
 
@@ -440,10 +436,49 @@ class ProjectRegistry:
                 api_keys=[
                     ProjectAPIKey(
                         key_id="default",
-                        api_key="default_default_default",
+                        api_key="default_default_abcdefghijklmnopqrstuvwxyz123456",
                         is_active=True,
                     )
                 ],
             )
             self._projects["default"] = default_project
             logger.info("Created default project for backward compatibility")
+
+
+# =============================================================================
+# Global Project Registry Singleton
+# =============================================================================
+
+_global_registry: ProjectRegistry | None = None
+
+
+def get_project_registry() -> ProjectRegistry:
+    """Get the global project registry instance.
+
+    Returns:
+        The global ProjectRegistry instance
+
+    Example:
+        >>> registry = get_project_registry()
+        >>> project = await registry.get_project("my_project")
+    """
+    global _global_registry
+
+    if _global_registry is None:
+        _global_registry = ProjectRegistry()
+
+    return _global_registry
+
+
+def reset_project_registry() -> None:
+    """Reset the global project registry.
+
+    This is primarily useful for testing purposes.
+
+    Warning:
+        This will clear all project data from the registry.
+    """
+    global _global_registry
+
+    _global_registry = None
+    logger.debug("Project registry reset")

@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from agent_comm_core.config import Config, ConfigLoader
 from agent_comm_core.db.database import close_db, get_engine, init_db
 from communication_server.api import (
+    agent_comm_router,
     agents_router,
     auth_router,
     chat_router,
@@ -31,6 +32,15 @@ from communication_server.api import (
     projects_router,
     security_router,
     status_router,
+)
+
+# Import SPEC-AGENT-COMM-001 database models to register them with SQLAlchemy
+from communication_server.db.agent_comm import (  # noqa: F401
+    AgentCommunicationDB,
+    AgentDecisionDB,
+    AgentMeetingDB,
+    AgentMeetingMessageDB,
+    AgentMeetingParticipantDB,
 )
 
 # Import database models to register them with SQLAlchemy
@@ -104,6 +114,7 @@ if False:  # config.security.rate_limiting.enabled
 # Include API routers
 app.include_router(agents_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(agent_comm_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(communications_router, prefix="/api/v1")
 app.include_router(decisions_router, prefix="/api/v1")

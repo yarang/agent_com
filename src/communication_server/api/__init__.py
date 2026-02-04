@@ -4,6 +4,7 @@ REST API endpoints for Communication Server.
 Provides API routes for communications, meetings, decisions, status, authentication, i18n, projects, agents, security, and chat.
 """
 
+from communication_server.api.agent_comm import router as agent_comm_router
 from communication_server.api.auth import router as auth_router
 from communication_server.api.chat import router as chat_router
 from communication_server.api.communications import router as communications_router
@@ -32,4 +33,6 @@ __all__ = [
     "agents_router",
     "mediators_router",
     "chat_router",
+    # SPEC-AGENT-COMM-001
+    "agent_comm_router",
 ]
