@@ -67,9 +67,10 @@ done
 # Functions
 print_header() {
     local text="$1"
-    echo -e "\n${CYAN}${BOLD}============================================================${NC}"
-    echo -e "${CYAN}${BOLD}${text:^60}${NC}"
-    echo -e "${CYAN}${BOLD}============================================================${NC}\n"
+    local padding=$(( (60 - ${#text}) / 2 ))
+    printf "\n${CYAN}${BOLD}============================================================${NC}\n"
+    printf "${CYAN}${BOLD}%*s%s%*s${NC}\n" $padding "" "$text" $padding ""
+    printf "${CYAN}${BOLD}============================================================${NC}\n\n"
 }
 
 print_step() {
