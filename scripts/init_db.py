@@ -288,8 +288,14 @@ async def seed_default_data(database_url: str | None = None) -> bool:
             admin_row = result.fetchone()
 
             if not admin_row:
-                # Create admin user first
-                admin_password = pwd_context.hash("admin")  # Default password, should be changed
+                # Generate random secure password (12 characters)
+                import secrets
+                import string
+
+                alphabet = string.ascii_letters + string.digits + "!@#$%"
+                admin_password_plain = "".join(secrets.choice(alphabet) for _ in range(12))
+                admin_password = pwd_context.hash(admin_password_plain)
+
                 admin_user = UserDB(
                     username="admin",
                     email="admin@example.com",
@@ -300,8 +306,9 @@ async def seed_default_data(database_url: str | None = None) -> bool:
                 session.add(admin_user)
                 await session.flush()  # Get the user ID
                 admin_id = admin_user.id
-                print_success("Created admin user (username: admin, password: admin)")
-                print_warning("IMPORTANT: Change the default admin password immediately!")
+                print_success("Created admin user (username: admin)")
+                print_info(f"  Password: {admin_password_plain}")
+                print_warning("IMPORTANT: Save this password now! It will not be shown again.")
             else:
                 admin_id = admin_row[0]
                 print_success("Admin user already exists")
