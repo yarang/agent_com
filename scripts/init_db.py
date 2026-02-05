@@ -274,7 +274,7 @@ async def seed_default_data(database_url: str | None = None) -> bool:
         from agent_comm_core.db.models.user import UserDB
         from mcp_broker.project.registry import get_project_registry
 
-        pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
         async with db_session(database_url) as session:
             # Check if default project exists
@@ -491,9 +491,8 @@ async def main() -> int:
     success = True
 
     # Step 1: Create database (if requested)
-    if args.create_db:
-        if not await create_database(args.db_name, args.admin_url):
-            return 1
+    if args.create_db and not await create_database(args.db_name, args.admin_url):
+        return 1
 
     # Step 2-4: Initialize tables, seed data, verify
     if not await initialize_tables(database_url, args.reset):
