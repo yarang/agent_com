@@ -278,28 +278,17 @@ async def seed_default_data(database_url: str | None = None) -> bool:
 
         async with db_session(database_url) as session:
             # Check if default project exists
-            result = await session.execute(text("SELECT id FROM projects WHERE id = 'proj_main'"))
+            result = await session.execute(
+                text("SELECT project_id FROM projects WHERE project_id = 'proj_main'")
+            )
             default_project_exists = result.fetchone() is not None
 
-            if not default_project_exists:
-                # Create default project
-                default_project = ProjectDB(
-                    id="proj_main",
-                    name="Main Project",
-                    description="Default project for general use",
-                    status="active",
-                )
-                session.add(default_project)
-                print_success("Created default project 'proj_main'")
-            else:
-                print_success("Default project 'proj_main' already exists")
-
-            # Check if admin user exists
+            # Get or create admin user first (projects require owner)
             result = await session.execute(text("SELECT id FROM users WHERE username = 'admin'"))
-            admin_exists = result.fetchone() is not None
+            admin_row = result.fetchone()
 
-            if not admin_exists:
-                # Create admin user
+            if not admin_row:
+                # Create admin user first
                 admin_password = pwd_context.hash("admin")  # Default password, should be changed
                 admin_user = UserDB(
                     username="admin",
@@ -309,10 +298,29 @@ async def seed_default_data(database_url: str | None = None) -> bool:
                     is_superuser=True,
                 )
                 session.add(admin_user)
+                await session.flush()  # Get the user ID
+                admin_id = admin_user.id
                 print_success("Created admin user (username: admin, password: admin)")
                 print_warning("IMPORTANT: Change the default admin password immediately!")
             else:
+                admin_id = admin_row[0]
                 print_success("Admin user already exists")
+
+            # Now create default project if needed
+            if not default_project_exists:
+                # Create default project
+                # Note: project_id is the human-readable ID, id is auto-generated UUID
+                default_project = ProjectDB(
+                    project_id="proj_main",
+                    name="Main Project",
+                    description="Default project for general use",
+                    status="active",
+                    owner_id=admin_id,  # Link to admin user
+                )
+                session.add(default_project)
+                print_success("Created default project 'proj_main'")
+            else:
+                print_success("Default project 'proj_main' already exists")
 
         # Initialize MCP Broker default project
         registry = get_project_registry()
