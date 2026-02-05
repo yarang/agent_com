@@ -4,11 +4,10 @@ SQLAlchemy ORM model for communications.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum as SQLEnum, String, Text
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import DateTime, String, Text, Uuid
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent_comm_core.db.base import Base
@@ -41,9 +40,7 @@ class CommunicationDB(Base):
         nullable=False,
         index=True,
     )
-    correlation_id: Mapped[Optional[UUID]] = mapped_column(
-        PGUUID(as_uuid=True), nullable=True, index=True
-    )
+    correlation_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True, index=True)
     # JSON stored as text (PostgreSQL JSONB would be better but keeping simple)
     # Note: 'metadata' is reserved in SQLAlchemy, so we use 'meta_data'
     # Use name='metadata' to keep the database column name
@@ -54,11 +51,12 @@ class CommunicationDB(Base):
 
     def to_pydantic(self):
         """Convert to Pydantic model."""
+        import json
+
         from agent_comm_core.models.communication import (
             Communication,
             CommunicationDirection,
         )
-        import json
 
         return Communication(
             id=self.id,

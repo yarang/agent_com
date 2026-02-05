@@ -17,9 +17,8 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text, Uuid
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
@@ -73,12 +72,12 @@ class AgentCommunicationDB(Base):
         index=True,
     )
     sender_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=False,
         index=True,
     )
     receiver_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=False,
         index=True,
     )
@@ -224,12 +223,12 @@ class AgentMeetingParticipantDB(Base):
     __tablename__ = "agent_comm_meeting_participants"
 
     meeting_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("agent_comm_meetings.id", ondelete="CASCADE"),
         nullable=False,
     )
     agent_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=False,
     )
     role: Mapped[str] = mapped_column(
@@ -284,12 +283,12 @@ class AgentMeetingMessageDB(Base):
     __tablename__ = "agent_comm_meeting_messages"
 
     meeting_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("agent_comm_meetings.id", ondelete="CASCADE"),
         nullable=False,
     )
     agent_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         nullable=False,
     )
     message_content: Mapped[str] = mapped_column(
@@ -359,7 +358,7 @@ class AgentDecisionDB(Base):
     __tablename__ = "agent_comm_decisions"
 
     meeting_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("agent_comm_meetings.id", ondelete="CASCADE"),
         nullable=False,
     )

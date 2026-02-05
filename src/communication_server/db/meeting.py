@@ -4,11 +4,10 @@ SQLAlchemy ORM models for meetings and related entities.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, JSON, String, Text
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
@@ -43,14 +42,14 @@ class MeetingDB(Base):
     __tablename__ = "meetings"
 
     title: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     agenda: Mapped[list] = mapped_column(JSON, default=[], nullable=False)
-    max_duration_seconds: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    max_duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[MeetingStatus] = mapped_column(
         SQLEnum(MeetingStatus), default=MeetingStatus.PENDING, nullable=False, index=True
     )
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False
     )
@@ -93,7 +92,7 @@ class MeetingParticipantDB(Base):
     __tablename__ = "meeting_participants"
 
     meeting_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("meetings.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -103,7 +102,7 @@ class MeetingParticipantDB(Base):
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False
     )
-    left_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    left_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationship
     meeting: Mapped["MeetingDB"] = relationship("MeetingDB", back_populates="participants")
@@ -132,7 +131,7 @@ class MeetingMessageDB(Base):
     __tablename__ = "meeting_messages"
 
     meeting_id: Mapped[UUID] = mapped_column(
-        PGUUID(as_uuid=True),
+        Uuid,
         ForeignKey("meetings.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -141,7 +140,7 @@ class MeetingMessageDB(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     message_type: Mapped[str] = mapped_column(String(100), default="statement", nullable=False)
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    in_reply_to: Mapped[Optional[UUID]] = mapped_column(PGUUID(as_uuid=True), nullable=True)
+    in_reply_to: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False
     )
@@ -182,16 +181,16 @@ class DecisionDB(Base):
     status: Mapped[DecisionStatus] = mapped_column(
         SQLEnum(DecisionStatus), default=DecisionStatus.PENDING, nullable=False, index=True
     )
-    meeting_id: Mapped[Optional[UUID]] = mapped_column(
-        PGUUID(as_uuid=True),
+    meeting_id: Mapped[UUID | None] = mapped_column(
+        Uuid,
         ForeignKey("meetings.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
-    selected_option: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    rationale: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    deadline: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    decided_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    selected_option: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=datetime.utcnow, nullable=False
     )
