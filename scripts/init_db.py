@@ -174,7 +174,7 @@ async def create_database(
             # Check if database exists
             async with engine.connect() as conn:
                 result = await conn.execute(
-                    f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'"
+                    text(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
                 )
                 exists = result.fetchone() is not None
 
@@ -191,7 +191,7 @@ async def create_database(
             engine2 = create_async_engine(admin_url, isolation_level="AUTOCOMMIT", echo=False)
             try:
                 async with engine2.connect() as conn:
-                    await conn.execute(f'CREATE DATABASE "{db_name}"')
+                    await conn.execute(text(f'CREATE DATABASE "{db_name}"'))
                     print_success(f"Created database '{db_name}'")
                 return True
             finally:
@@ -407,7 +407,7 @@ async def verify_initialization(database_url: str | None = None) -> bool:
 
             # Check admin user
             result = await session.execute(
-                "SELECT username, is_superuser FROM users WHERE username = 'admin'"
+                text("SELECT username, is_superuser FROM users WHERE username = 'admin'")
             )
             admin = result.fetchone()
 
