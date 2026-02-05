@@ -277,7 +277,7 @@ async def seed_default_data(database_url: str | None = None) -> bool:
 
         async with db_session(database_url) as session:
             # Check if default project exists
-            result = await session.execute("SELECT id FROM projects WHERE id = 'proj_main'")
+            result = await session.execute(text("SELECT id FROM projects WHERE id = 'proj_main'"))
             default_project_exists = result.fetchone() is not None
 
             if not default_project_exists:
@@ -294,7 +294,7 @@ async def seed_default_data(database_url: str | None = None) -> bool:
                 print_success("Default project 'proj_main' already exists")
 
             # Check if admin user exists
-            result = await session.execute("SELECT id FROM users WHERE username = 'admin'")
+            result = await session.execute(text("SELECT id FROM users WHERE username = 'admin'"))
             admin_exists = result.fetchone() is not None
 
             if not admin_exists:
@@ -353,12 +353,14 @@ async def verify_initialization(database_url: str | None = None) -> bool:
 
         async with db_session(database_url) as session:
             # Check tables
-            result = await session.execute("""
+            result = await session.execute(
+                text("""
                 SELECT table_name
                 FROM information_schema.tables
                 WHERE table_schema = 'public'
                 ORDER BY table_name
             """)
+            )
             tables = [row[0] for row in result.fetchall()]
 
             expected_tables = {
