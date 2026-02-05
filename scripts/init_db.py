@@ -487,8 +487,26 @@ async def main() -> int:
     success = True
 
     # Step 1: Create database (if requested)
-    if args.create_db and not await create_database(args.db_name, args.admin_url):
-        return 1
+    if args.create_db:
+        # Derive admin URL from DATABASE_URL if not explicitly provided
+        admin_url = args.admin_url
+        if (
+            admin_url == "postgresql+asyncpg://postgres:password@localhost:5432/postgres"
+            and database_url
+        ):
+            # Extract host, port, credentials from DATABASE_URL and use postgres database
+            # Expected format: postgresql+asyncpg://user:pass@host:port/dbname
+            import re
+
+            match = re.match(
+                r"postgresql\+asyncpg://([^:]+):([^@]+)@([^:/]+):(\d+)/", database_url or ""
+            )
+            if match:
+                user, password, host, port = match.groups()
+                admin_url = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/postgres"
+
+        if not await create_database(args.db_name, admin_url):
+            return 1
 
     # Step 2-4: Initialize tables, seed data, verify
     if not await initialize_tables(database_url, args.reset):
