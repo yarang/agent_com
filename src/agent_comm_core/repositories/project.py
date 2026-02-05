@@ -11,7 +11,8 @@ from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from agent_comm_core.db.models.project import ProjectDB, ProjectStatus
+from agent_comm_core.db.models.project import ProjectDB
+from agent_comm_core.models.common import ProjectStatus
 from agent_comm_core.repositories.sqlalchemy_base import SQLAlchemyRepositoryBase
 
 

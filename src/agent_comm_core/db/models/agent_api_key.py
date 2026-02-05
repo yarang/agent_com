@@ -3,29 +3,14 @@ Agent API Key database model with structured key format.
 """
 
 from datetime import UTC, datetime
-from enum import Enum
 from uuid import UUID, uuid4
 
 from sqlalchemy import JSON, DateTime, ForeignKey, String, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from agent_comm_core.db.base import Base
-
-
-class KeyStatus(str, Enum):
-    """Status of an API key."""
-
-    ACTIVE = "active"
-    REVOKED = "revoked"
-    EXPIRED = "expired"
-
-
-class CreatorType(str, Enum):
-    """Type of entity that created the record."""
-
-    USER = "user"
-    AGENT = "agent"
-    SYSTEM = "system"
+from agent_comm_core.models.common import ActorType as CreatorType
+from agent_comm_core.models.common import KeyStatus
 
 
 class AgentApiKeyDB(Base):

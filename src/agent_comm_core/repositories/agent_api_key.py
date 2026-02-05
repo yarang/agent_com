@@ -10,7 +10,9 @@ from uuid import UUID, uuid4
 from sqlalchemy import ScalarResult, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from agent_comm_core.db.models.agent_api_key import AgentApiKeyDB, CreatorType, KeyStatus
+from agent_comm_core.db.models.agent_api_key import AgentApiKeyDB
+from agent_comm_core.models.common import ActorType as CreatorType
+from agent_comm_core.models.common import KeyStatus
 from agent_comm_core.repositories.sqlalchemy_base import SQLAlchemyRepositoryBase
 
 

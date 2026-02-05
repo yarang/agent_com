@@ -10,7 +10,7 @@ entity-specific operations.
 from datetime import UTC, datetime
 from typing import Any, Generic, TypeVar
 
-from sqlalchemy import ScalarResult, delete, select, update
+from sqlalchemy import ScalarResult, delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -111,7 +111,6 @@ class SQLAlchemyRepositoryBase(Generic[ModelType]):
         Returns:
             Count of matching entities
         """
-        from sqlalchemy import func
 
         query = select(func.count(self._model.id))  # type: ignore[attr-defined]
 
@@ -230,9 +229,7 @@ class SQLAlchemyRepositoryBase(Generic[ModelType]):
 
         return await self.get_by_id(id)
 
-    async def update_many(
-        self, ids: list[Any], **kwargs: Any
-    ) -> int:
+    async def update_many(self, ids: list[Any], **kwargs: Any) -> int:
         """
         Update multiple entities by their IDs.
 
@@ -362,9 +359,7 @@ class SQLAlchemyRepositoryBase(Generic[ModelType]):
             field_name = "created_at"
 
         if not hasattr(self._model, field_name):
-            raise AttributeError(
-                f"Model {self._model.__name__} does not have field '{field_name}'"
-            )
+            raise AttributeError(f"Model {self._model.__name__} does not have field '{field_name}'")
 
         return getattr(self._model, field_name)
 

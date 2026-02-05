@@ -3,7 +3,6 @@ Project database model for multi-tenancy support.
 """
 
 from datetime import datetime
-from enum import Enum
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -20,15 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
-
-
-class ProjectStatus(str, Enum):
-    """Status of a project."""
-
-    ACTIVE = "active"
-    SUSPENDED = "suspended"
-    ARCHIVED = "archived"
-    DELETED = "deleted"
+from agent_comm_core.models.common import ProjectStatus
 
 
 class ProjectDB(Base):
