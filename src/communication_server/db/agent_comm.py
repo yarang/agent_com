@@ -228,12 +228,10 @@ class AgentMeetingParticipantDB(Base):
         PGUUID(as_uuid=True),
         ForeignKey("agent_comm_meetings.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     agent_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True),
         nullable=False,
-        index=True,
     )
     role: Mapped[str] = mapped_column(
         String(50),
@@ -290,7 +288,6 @@ class AgentMeetingMessageDB(Base):
         PGUUID(as_uuid=True),
         ForeignKey("agent_comm_meetings.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     agent_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True),
@@ -366,7 +363,6 @@ class AgentDecisionDB(Base):
         PGUUID(as_uuid=True),
         ForeignKey("agent_comm_meetings.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     decision_content: Mapped[str] = mapped_column(
         Text,
