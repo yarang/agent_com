@@ -31,6 +31,18 @@ import asyncio
 import sys
 from pathlib import Path
 
+# Load .env file before importing project modules
+from dotenv import load_dotenv
+
+# Try to load .env file from multiple locations
+env_paths = [
+    Path(__file__).parent.parent / ".env",  # Project root
+    Path(__file__).parent.parent / ".env.production",  # Production config
+    Path.cwd() / ".env",  # Current directory
+    Path.cwd() / ".env.production",  # Production in current dir
+]
+load_dotenv(dotenv_path=env_paths[0], override=True)  # Load .env if exists
+
 # Add src directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
