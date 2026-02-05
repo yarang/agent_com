@@ -293,7 +293,7 @@ async def seed_default_data(database_url: str | None = None) -> bool:
                 admin_user = UserDB(
                     username="admin",
                     email="admin@example.com",
-                    hashed_password=admin_password,
+                    password_hash=admin_password,
                     is_active=True,
                     is_superuser=True,
                 )
