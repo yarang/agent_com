@@ -4,20 +4,22 @@ Agent API key repository for database operations.
 Provides database access layer for AgentApiKeyDB model.
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import ScalarResult, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from agent_comm_core.db.models.agent_api_key import AgentApiKeyDB, CreatorType, KeyStatus
+from agent_comm_core.repositories.sqlalchemy_base import SQLAlchemyRepositoryBase
 
 
-class AgentApiKeyRepository:
+class AgentApiKeyRepository(SQLAlchemyRepositoryBase[AgentApiKeyDB]):
     """
     Repository for agent API key database operations.
 
     Provides CRUD operations for AgentApiKeyDB entities.
+    Extends the base repository with agent API key specific operations.
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -27,7 +29,11 @@ class AgentApiKeyRepository:
         Args:
             session: SQLAlchemy async session
         """
-        self._session = session
+        super().__init__(session, AgentApiKeyDB)
+
+    # ========================================================================
+    # Agent API Key Specific Operations
+    # ========================================================================
 
     async def create(
         self,
@@ -37,7 +43,7 @@ class AgentApiKeyRepository:
         api_key_hash: str,
         key_prefix: str,
         capabilities: list[str],
-        created_by_type: str = CreatorType.USER,
+        created_by_type: str = CreatorType.USER,  # Using CreatorType from DB model
         created_by_id: UUID | None = None,
         expires_at: str | None = None,
     ) -> AgentApiKeyDB:
@@ -58,8 +64,7 @@ class AgentApiKeyRepository:
         Returns:
             Created agent API key instance
         """
-
-        key = AgentApiKeyDB(
+        return await super().create(
             project_id=project_id,
             agent_id=agent_id,
             key_id=key_id,
@@ -71,24 +76,6 @@ class AgentApiKeyRepository:
             created_by_type=created_by_type,
             created_by_id=created_by_id or uuid4(),
         )
-        self._session.add(key)
-        await self._session.flush()
-        return key
-
-    async def get_by_id(self, key_id: UUID) -> AgentApiKeyDB | None:
-        """
-        Get agent API key by ID.
-
-        Args:
-            key_id: API key UUID
-
-        Returns:
-            Agent API key instance or None
-        """
-        result = await self._session.execute(
-            select(AgentApiKeyDB).where(AgentApiKeyDB.id == key_id)
-        )
-        return result.scalar_one_or_none()
 
     async def get_by_key_id(self, key_id: str) -> AgentApiKeyDB | None:
         """
@@ -200,8 +187,6 @@ class AgentApiKeyRepository:
         Returns:
             True if updated, False if not found
         """
-        from datetime import datetime
-
         result = await self._session.execute(
             update(AgentApiKeyDB)
             .where(AgentApiKeyDB.id == key_id)

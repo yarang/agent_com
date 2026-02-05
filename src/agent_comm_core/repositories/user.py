@@ -4,19 +4,22 @@ User repository for database operations.
 Provides database access layer for UserDB model.
 """
 
+import json
 from uuid import UUID
 
 from sqlalchemy import ScalarResult, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from agent_comm_core.db.models.user import UserDB
+from agent_comm_core.repositories.sqlalchemy_base import SQLAlchemyRepositoryBase
 
 
-class UserRepository:
+class UserRepository(SQLAlchemyRepositoryBase[UserDB]):
     """
     Repository for user database operations.
 
     Provides CRUD operations for UserDB entities.
+    Extends the base repository with user specific operations.
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -26,7 +29,11 @@ class UserRepository:
         Args:
             session: SQLAlchemy async session
         """
-        self._session = session
+        super().__init__(session, UserDB)
+
+    # ========================================================================
+    # User Specific Operations
+    # ========================================================================
 
     async def create(
         self,
@@ -51,9 +58,7 @@ class UserRepository:
         Returns:
             Created user instance
         """
-        import json
-
-        user = UserDB(
+        return await super().create(
             username=username,
             email=email,
             password_hash=password_hash,
@@ -63,22 +68,6 @@ class UserRepository:
             permissions=json.dumps(permissions) if permissions else None,
             full_name=full_name,
         )
-        self._session.add(user)
-        await self._session.flush()
-        return user
-
-    async def get_by_id(self, user_id: UUID) -> UserDB | None:
-        """
-        Get user by ID.
-
-        Args:
-            user_id: User UUID
-
-        Returns:
-            User instance or None
-        """
-        result = await self._session.execute(select(UserDB).where(UserDB.id == user_id))
-        return result.scalar_one_or_none()
 
     async def get_by_username(self, username: str) -> UserDB | None:
         """
@@ -123,15 +112,11 @@ class UserRepository:
         Returns:
             Scalar result of users
         """
-        query = select(UserDB)
-
+        filters = {}
         if is_active is not None:
-            query = query.where(UserDB.is_active == is_active)
+            filters["is_active"] = is_active
 
-        query = query.limit(limit).offset(offset)
-
-        result = await self._session.execute(query)
-        return result.scalars()
+        return await super().list_all(limit=limit, offset=offset, filters=filters)
 
     async def update_password(self, user_id: UUID, password_hash: str) -> bool:
         """

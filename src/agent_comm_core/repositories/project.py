@@ -4,21 +4,23 @@ Project repository for database operations.
 Provides database access layer for ProjectDB model.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import ScalarResult, select, update
+from sqlalchemy import ScalarResult, delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from agent_comm_core.db.models.project import ProjectDB, ProjectStatus
+from agent_comm_core.repositories.sqlalchemy_base import SQLAlchemyRepositoryBase
 
 
-class ProjectRepository:
+class ProjectRepository(SQLAlchemyRepositoryBase[ProjectDB]):
     """
     Repository for project database operations.
 
     Provides CRUD operations for ProjectDB entities.
+    Extends the base repository with project specific operations.
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -28,7 +30,11 @@ class ProjectRepository:
         Args:
             session: SQLAlchemy async session
         """
-        self._session = session
+        super().__init__(session, ProjectDB)
+
+    # ========================================================================
+    # Project Specific Operations
+    # ========================================================================
 
     async def create(
         self,
@@ -55,7 +61,7 @@ class ProjectRepository:
         Returns:
             Created project instance
         """
-        project = ProjectDB(
+        project = await super().create(
             owner_id=owner_id,
             project_id=project_id,
             name=name,
@@ -64,23 +70,8 @@ class ProjectRepository:
             allow_cross_project=allow_cross_project,
             settings=settings,
         )
-        self._session.add(project)
-        await self._session.flush()
         await self._session.refresh(project)
         return project
-
-    async def get_by_id(self, project_id: UUID) -> ProjectDB | None:
-        """
-        Get project by database ID.
-
-        Args:
-            project_id: Project UUID
-
-        Returns:
-            Project instance or None
-        """
-        result = await self._session.execute(select(ProjectDB).where(ProjectDB.id == project_id))
-        return result.scalar_one_or_none()
 
     async def get_by_project_id(self, project_id: str) -> ProjectDB | None:
         """
@@ -136,8 +127,10 @@ class ProjectRepository:
         query = select(ProjectDB).where(ProjectDB.owner_id == owner_id)
 
         if not include_archived:
-            query = query.where(ProjectDB.status != ProjectStatus.ARCHIVED)
-            query = query.where(ProjectDB.status != ProjectStatus.DELETED)
+            query = query.where(
+                ProjectDB.status != ProjectStatus.ARCHIVED,
+                ProjectDB.status != ProjectStatus.DELETED,
+            )
 
         query = query.order_by(ProjectDB.created_at.desc()).limit(limit).offset(offset)
 
@@ -161,18 +154,27 @@ class ProjectRepository:
         Returns:
             Scalar result of projects
         """
-        query = select(ProjectDB)
-
+        filters: dict[str, str] | None = None
         if status:
-            query = query.where(ProjectDB.status == status)
-        else:
-            # Exclude deleted projects by default
-            query = query.where(ProjectDB.status != ProjectStatus.DELETED)
+            filters = {"status": status}
 
-        query = query.order_by(ProjectDB.created_at.desc()).limit(limit).offset(offset)
+        result = await super().list_all(
+            limit=limit,
+            offset=offset,
+            order_by="created_at",
+            descending=True,
+            filters=filters,
+        )
 
-        result = await self._session.execute(query)
-        return result.scalars()
+        # Exclude deleted projects by default if no status filter
+        if status is None:
+            # Need to re-query to exclude deleted properly
+            query = select(ProjectDB).where(ProjectDB.status != ProjectStatus.DELETED)
+            query = query.order_by(ProjectDB.created_at.desc()).limit(limit).offset(offset)
+            result = await self._session.execute(query)
+            return result.scalars()
+
+        return result
 
     async def update(
         self,
@@ -197,7 +199,7 @@ class ProjectRepository:
         Returns:
             Updated project instance or None
         """
-        update_values: dict = {}
+        update_values: dict[str, str | bool | dict] = {}
         if name is not None:
             update_values["name"] = name
         if description is not None:
@@ -210,17 +212,9 @@ class ProjectRepository:
             update_values["settings"] = settings
 
         # Always update updated_at timestamp
-        update_values["updated_at"] = datetime.utcnow()
+        update_values["updated_at"] = datetime.now(UTC)
 
-        result = await self._session.execute(
-            update(ProjectDB).where(ProjectDB.id == project_id).values(**update_values)
-        )
-
-        if result.rowcount == 0:
-            return None
-
-        # Fetch and return the updated project
-        return await self.get_by_id(project_id)
+        return await super().update(project_id, **update_values)
 
     async def archive(self, project_id: UUID) -> ProjectDB | None:
         """
@@ -265,8 +259,6 @@ class ProjectRepository:
             )
             return result.rowcount > 0
         else:
-            from sqlalchemy import delete
-
             result = await self._session.execute(
                 delete(ProjectDB).where(ProjectDB.id == project_id)
             )

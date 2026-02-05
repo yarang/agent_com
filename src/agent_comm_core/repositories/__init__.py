@@ -1,7 +1,8 @@
 """
-Repository interfaces for data access layer.
+Repository layer for data access.
 
-Abstract base classes defining CRUD operations for entities.
+Provides abstract base classes and concrete implementations
+for database operations using SQLAlchemy.
 """
 
 from abc import ABC, abstractmethod
@@ -17,6 +18,15 @@ from agent_comm_core.models.meeting import (
     MeetingParticipant,
     MeetingParticipantCreate,
 )
+
+# Import concrete repository implementations
+from agent_comm_core.repositories.agent_api_key import AgentApiKeyRepository
+from agent_comm_core.repositories.chat import ChatRepository
+from agent_comm_core.repositories.project import ProjectRepository
+
+# Import the new generic SQLAlchemy base
+from agent_comm_core.repositories.sqlalchemy_base import SQLAlchemyRepositoryBase
+from agent_comm_core.repositories.user import UserRepository
 
 T = TypeVar("T")
 CreateT = TypeVar("CreateT")
@@ -222,16 +232,14 @@ class MeetingRepository(BaseRepository[Meeting, MeetingCreate]):
         pass
 
 
-# Import concrete repository implementations
-from agent_comm_core.repositories.agent_api_key import AgentApiKeyRepository
-from agent_comm_core.repositories.chat import ChatRepository
-from agent_comm_core.repositories.project import ProjectRepository
-from agent_comm_core.repositories.user import UserRepository
-
 __all__ = [
+    # Abstract base classes
     "BaseRepository",
     "CommunicationRepository",
     "MeetingRepository",
+    # Generic base class (new)
+    "SQLAlchemyRepositoryBase",
+    # Concrete implementations
     "UserRepository",
     "AgentApiKeyRepository",
     "ProjectRepository",

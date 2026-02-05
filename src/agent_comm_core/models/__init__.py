@@ -2,6 +2,7 @@
 Data models for Agent Communication System.
 
 Pydantic models for data validation and serialization.
+Includes common enums, mixins, and domain models.
 """
 
 from agent_comm_core.models.auth import (
@@ -17,16 +18,23 @@ from agent_comm_core.models.auth import (
     UserCreate,
     UserRole,
 )
-from agent_comm_core.models.communication import (
-    Communication,
-    CommunicationCreate,
+from agent_comm_core.models.common import (
+    ActorType,
+    AgentStatus,
+    AuditAction,
+    CommonStatus,
     CommunicationDirection,
-)
-from agent_comm_core.models.decision import (
-    Decision,
-    DecisionCreate,
+    CreatorType,
     DecisionStatus,
+    EntityType,
+    KeyStatus,
+    MeetingStatus,
+    MessageType,
+    ProjectStatus,
+    SenderType,
 )
+from agent_comm_core.models.communication import Communication, CommunicationCreate
+from agent_comm_core.models.decision import Decision, DecisionCreate
 from agent_comm_core.models.meeting import (
     Meeting,
     MeetingCreate,
@@ -34,12 +42,18 @@ from agent_comm_core.models.meeting import (
     MeetingMessageCreate,
     MeetingParticipant,
     MeetingParticipantCreate,
-    MeetingStatus,
+)
+from agent_comm_core.models.mixins import (
+    ExpirationMixin,
+    MetadataMixin,
+    OwnershipMixin,
+    StatusMixin,
+    TimestampMixin,
+    ValidationMixin,
 )
 from agent_comm_core.models.project_chat import (
     AgentAssignment,
     AgentAssignmentRequest,
-    MessageType,
     ProjectChatRoom,
     ProjectCreateRequest,
     ProjectMessage,
@@ -51,31 +65,51 @@ from agent_comm_core.models.status import (
     AgentInfo,
     AgentRegistration,
     AgentStats,
-    AgentStatus,
     MessageEvent,
     SystemStats,
     format_agent_display_id,
 )
 
 __all__ = [
+    # Common enums (new centralized location)
+    "ActorType",
+    "AgentStatus",
+    "AuditAction",
+    "CommunicationDirection",
+    "CommonStatus",
+    "CreatorType",
+    "DecisionStatus",
+    "EntityType",
+    "KeyStatus",
+    "MeetingStatus",
+    "MessageType",
+    "ProjectStatus",
+    "SenderType",
+    # Mixins
+    "ExpirationMixin",
+    "MetadataMixin",
+    "OwnershipMixin",
+    "StatusMixin",
+    "TimestampMixin",
+    "ValidationMixin",
+    # Communication models
     "Communication",
     "CommunicationCreate",
-    "CommunicationDirection",
+    # Meeting models
     "Meeting",
     "MeetingCreate",
     "MeetingMessage",
     "MeetingMessageCreate",
     "MeetingParticipant",
     "MeetingParticipantCreate",
-    "MeetingStatus",
+    # Decision models
     "Decision",
     "DecisionCreate",
-    "DecisionStatus",
+    # Status board models
     "ActivityPatterns",
     "AgentInfo",
     "AgentRegistration",
     "AgentStats",
-    "AgentStatus",
     "MessageEvent",
     "SystemStats",
     "format_agent_display_id",
@@ -94,7 +128,6 @@ __all__ = [
     # Project chat models
     "AgentAssignment",
     "AgentAssignmentRequest",
-    "MessageType",
     "ProjectChatRoom",
     "ProjectCreateRequest",
     "ProjectMessage",
