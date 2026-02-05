@@ -17,9 +17,8 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -372,13 +371,13 @@ class AgentDecisionDB(Base):
         Text,
         nullable=True,
     )
-    related_communication_ids: Mapped[list[UUID]] = mapped_column(
-        ARRAY(PGUUID(as_uuid=True)),
+    related_communication_ids: Mapped[list] = mapped_column(
+        JSON,
         default=list,
         nullable=False,
     )
     participant_agreement: Mapped[dict] = mapped_column(
-        JSONB,
+        JSON,
         default=dict,
         nullable=False,
     )
