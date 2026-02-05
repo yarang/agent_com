@@ -257,8 +257,8 @@ async def seed_default_data(database_url: str | None = None) -> bool:
         from passlib.context import CryptContext
 
         from agent_comm_core.db.database import db_session
+        from agent_comm_core.db.models.project import ProjectDB
         from agent_comm_core.db.models.user import UserDB
-        from agent_comm_core.models.project import ProjectDB
         from mcp_broker.project.registry import get_project_registry
 
         pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
