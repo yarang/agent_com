@@ -33,6 +33,7 @@ from pathlib import Path
 
 # Load .env file before importing project modules
 from dotenv import load_dotenv
+from sqlalchemy import text
 
 # Try to load .env file from multiple locations
 env_paths = [
