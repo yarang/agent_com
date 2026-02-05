@@ -11,7 +11,7 @@
         "mcp-broker"
       ],
       "env": {
-        "AGENT_TOKEN": "agent_default_test_gM5kAxvseNVjYwnNIR8lvejNHVcd8npIiCkAieuoj_o",
+        "AGENT_TOKEN": "agent_default_test_KPr5SbZ6ZRVpig8PbNmruEuxTmc1n3HFJO5P2nH6XMo",
         "AGENT_NICKNAME": "local-agent",
         "AGENT_PROJECT_ID": "default",
         "COMMUNICATION_SERVER_URL": "http://oci-ajou-ec2.fcoinfup.com:8000",
