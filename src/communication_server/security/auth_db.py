@@ -433,7 +433,36 @@ class AuthServiceDB:
 
         # Store in database
         async with db_session() as session:
+            from sqlalchemy import select
+
             repo = AgentApiKeyRepository(session)
+
+            # Get project owner to use as creator
+            from agent_comm_core.db.models.project import ProjectDB
+
+            project_result = await session.execute(
+                select(ProjectDB.owner_id).where(ProjectDB.id == project_uuid)
+            )
+            owner_id = project_result.scalar_one_or_none()
+
+            # If no project found, use admin user as fallback
+            if not owner_id:
+                admin_result = await session.execute(
+                    select(UserDB.id).where(UserDB.username == "admin")
+                )
+                owner_id = admin_result.scalar_one_or_none()
+                if not owner_id:
+                    # Create admin user if not exists
+                    admin_user = UserDB(
+                        username="admin",
+                        email="admin@localhost",
+                        password_hash=self._hash_password("DefaultPassword123!"),
+                        role=UserRole.ADMIN.value,
+                        permissions="{}",
+                    )
+                    session.add(admin_user)
+                    await session.flush()
+                    owner_id = admin_user.id
 
             # Check if agent already exists in project
             existing = await repo.agent_exists_in_project(project_uuid, agent_id)
@@ -447,7 +476,7 @@ class AuthServiceDB:
                     key_prefix=token[:20],  # Store first 20 chars as prefix
                     capabilities=capabilities,
                     created_by_type="user",
-                    created_by_id=uuid4(),  # Default to system user
+                    created_by_id=owner_id,  # Use project owner or admin as creator
                 )
                 await session.commit()
 

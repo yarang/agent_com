@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+
+#### Agent User Ownership Model (SPEC-AGENT-002)
+- **Foreign Key Constraint** - Added referential integrity between `agent_api_keys.created_by_id` and `users.id`
+  - `ForeignKey("users.id", ondelete="SET NULL")` constraint on `AgentApiKeyDB.created_by_id`
+  - ON DELETE SET NULL behavior preserves agent keys when users are deleted
+  - Migration script `002_add_agent_api_key_user_fk.sql` with data validation
+  - Alembic migration `002_add_agent_api_key_user_fk.py` for future use
+
+#### Database Schema
+- **Foreign Key** on `agent_api_keys.created_by_id` referencing `users.id`
+  - Validates all agent API keys are created by valid users
+  - Sets `created_by_id` to NULL when referenced user is deleted
+  - Index `idx_agent_api_keys_created_by_id` for query performance
+
+#### Testing
+- **Characterization Tests** - `test_agent_api_key_fk.py`
+  - Documents current FK behavior before refactoring
+  - Tests for FK field definition, valid/invalid user IDs, NULL handling
+  - Repository FK behavior characterization
+
+- **Unit Tests** - `test_agent_api_key_fk_behavior.py`
+  - Tests for FK constraint validation and behavior
+  - ON DELETE SET NULL behavior verification
+  - Query and filtering by `created_by_id`
+  - JOIN queries with users table
+  - Edge cases: multiple keys same creator, NULL values, updates
+
+#### Documentation
+- Migration notes for `agent_api_keys` foreign key constraint
+- API documentation updates for agent ownership model
+- Test coverage for foreign key constraint behavior
+
+### Changed
+
+#### Agent API Key Repository
+- **Removed uuid4() Fallback** - Repository now requires explicit `created_by_id`
+  - Previous behavior: `created_by_id=created_by_id or uuid4()` fallback
+  - New behavior: `created_by_id` must be provided explicitly
+  - NULL values allowed for system-created keys
+
+#### Agent API Key Services
+- **AuthServiceDB.create_agent_token()** - Now uses `ProjectDB.owner_id` as creator
+  - Queries project owner to use as `created_by_id`
+  - Falls back to admin user if project not found
+  - Ensures all agent keys have valid user ownership
+
+#### Data Consistency
+- **Ownership Chain Alignment** - All agent-related resources now reference users
+  - `ProjectDB.owner_id` → users.id
+  - `MediatorDB.created_by` → users.id
+  - `MediatorPromptDB.created_by` → users.id
+  - `AgentApiKeyDB.created_by_id` → users.id ✅ NOW FIXED
+
+### Security
+- **Database-Level Referential Integrity** - FK constraint enforced at database level
+- **No Orphaned Records** - Migration validates and fixes orphaned `created_by_id` values
+- **Audit Trail** - All agent API keys traceable to creating user
+
+---
+
 ## [1.0.0] - 2025-01-31
 
 ### Added

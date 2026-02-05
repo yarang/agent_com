@@ -485,7 +485,7 @@ class AuthService:
 
             repo = AgentApiKeyRepository(session)
 
-            # Create the agent API key
+            # Create the agent API key with proper user ownership
             await repo.create(
                 project_id=project_uuid,
                 agent_id=agent_id,
@@ -494,7 +494,7 @@ class AuthService:
                 key_prefix=token[:20],  # Store first 20 chars as prefix
                 capabilities=capabilities,
                 created_by_type="user",
-                created_by_id=uuid4(),  # Default to system user
+                created_by_id=user_db.id,  # Use admin user as creator
             )
             await session.commit()
 

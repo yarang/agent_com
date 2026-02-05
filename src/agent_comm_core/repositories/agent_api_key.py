@@ -5,7 +5,7 @@ Provides database access layer for AgentApiKeyDB model.
 """
 
 from datetime import UTC, datetime
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import ScalarResult, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,7 +60,7 @@ class AgentApiKeyRepository(SQLAlchemyRepositoryBase[AgentApiKeyDB]):
             key_prefix: Key prefix for identification
             capabilities: List of agent capabilities
             created_by_type: Type of creator (user/agent/system)
-            created_by_id: UUID of the creator
+            created_by_id: UUID of the creator (user UUID, now required for proper ownership)
             expires_at: Optional expiration timestamp
 
         Returns:
@@ -76,7 +76,7 @@ class AgentApiKeyRepository(SQLAlchemyRepositoryBase[AgentApiKeyDB]):
             status=KeyStatus.ACTIVE,
             expires_at=expires_at,
             created_by_type=created_by_type,
-            created_by_id=created_by_id or uuid4(),
+            created_by_id=created_by_id,  # Foreign key to users.id, should be actual user UUID
         )
 
     async def get_by_key_id(self, key_id: str) -> AgentApiKeyDB | None:

@@ -89,7 +89,7 @@ class AgentApiKeyDB(Base):
         default=None,
     )
 
-    # Creator tracking
+    # Creator tracking (user who created this agent key)
     created_by_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -97,7 +97,9 @@ class AgentApiKeyDB(Base):
     )
     created_by_id: Mapped[UUID] = mapped_column(
         Uuid,
-        nullable=False,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        default=None,
     )
 
     # Timestamps
