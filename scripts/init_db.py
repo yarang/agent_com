@@ -377,16 +377,12 @@ async def verify_initialization(database_url: str | None = None) -> bool:
                 "projects",
                 "agent_api_keys",
                 "chat_rooms",
-                "messages",
-                "meetings",
-                "meeting_participants",
-                "meeting_messages",
-                "decisions",
-                "agent_comm_communications",
-                "agent_comm_meetings",
-                "agent_comm_meeting_participants",
-                "agent_comm_meeting_messages",
-                "agent_comm_decisions",
+                "chat_participants",
+                "chat_messages",
+                "mediators",
+                "mediator_models",
+                "mediator_prompts",
+                "chat_room_mediators",
                 "audit_logs",
             }
 
@@ -400,7 +396,7 @@ async def verify_initialization(database_url: str | None = None) -> bool:
 
             # Check default project
             result = await session.execute(
-                "SELECT id, name, status FROM projects WHERE id = 'proj_main'"
+                text("SELECT id, name, status FROM projects WHERE project_id = 'proj_main'")
             )
             project = result.fetchone()
 
