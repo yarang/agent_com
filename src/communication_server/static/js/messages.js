@@ -6,7 +6,7 @@
 
 // Messages state
 let messages = [];
-let selectedProjectId = null;
+let selectedMessageProjectId = null;  // Renamed to avoid conflict with projects.js
 let currentOffset = 0;
 const pageSize = 50;
 let isLoading = false;
@@ -88,7 +88,7 @@ async function loadMessages(reset = true) {
     showLoading(true);
 
     try {
-        const projectId = selectedProjectId || undefined;
+        const projectId = selectedMessageProjectId || undefined;
         const data = await fetchMessages({
             project_id: projectId,
             limit: pageSize,
@@ -256,7 +256,7 @@ function closeMessageModal() {
 async function handleProjectFilterChange() {
     if (!messageElements.messageProjectFilter) return;
 
-    selectedProjectId = messageElements.messageProjectFilter.value || null;
+    selectedMessageProjectId = messageElements.messageProjectFilter.value || null;
     await loadMessages(true);
 }
 

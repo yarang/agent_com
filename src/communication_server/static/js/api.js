@@ -765,13 +765,26 @@ async function fetchMessages(options = {}) {
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/messages?${params}`);
+
+        // Handle non-JSON responses (like 500 errors with plain text)
+        const contentType = response.headers.get('content-type');
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.error(`HTTP error! status: ${response.status}`);
+            // Return empty array instead of throwing to prevent UI freeze
+            return [];
         }
+
+        // Check if response is JSON
+        if (!contentType || !contentType.includes('application/json')) {
+            console.warn('Non-JSON response received');
+            return [];
+        }
+
         return await response.json();
     } catch (error) {
         console.error('Error fetching messages:', error);
-        throw error;
+        // Return empty array instead of throwing to prevent UI freeze
+        return [];
     }
 }
 
