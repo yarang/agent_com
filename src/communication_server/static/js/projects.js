@@ -15,6 +15,7 @@ const projectElements = {
     projectSidebar: null,
     projectList: null,
     sidebarToggle: null,
+    sidebarExpand: null,
     mainContent: null,
 };
 
@@ -28,6 +29,7 @@ async function initProjectSidebar() {
     projectElements.projectSidebar = document.getElementById('projectSidebar');
     projectElements.projectList = document.getElementById('projectList');
     projectElements.sidebarToggle = document.getElementById('sidebarToggle');
+    projectElements.sidebarExpand = document.getElementById('sidebarExpand');
     projectElements.mainContent = document.querySelector('.main');
 
     if (!projectElements.projectSidebar) {
@@ -35,8 +37,18 @@ async function initProjectSidebar() {
         return;
     }
 
-    // Set up toggle button
+    // Set up toggle buttons
     projectElements.sidebarToggle?.addEventListener('click', toggleSidebar);
+    projectElements.sidebarExpand?.addEventListener('click', toggleSidebar);
+
+    // Load collapsed state from localStorage
+    const savedCollapsed = localStorage.getItem('sidebarCollapsed');
+    if (savedCollapsed === 'true') {
+        sidebarCollapsed = true;
+        projectElements.projectSidebar.classList.add('collapsed');
+        projectElements.mainContent?.classList.add('sidebar-collapsed');
+        updateToggleButtonIcon();
+    }
 
     // Load selected project from localStorage
     const savedProject = localStorage.getItem('selectedProjectId');
@@ -201,8 +213,31 @@ function toggleSidebar() {
     projectElements.projectSidebar.classList.toggle('collapsed', sidebarCollapsed);
     projectElements.mainContent?.classList.toggle('sidebar-collapsed', sidebarCollapsed);
 
+    // Update toggle button icon
+    updateToggleButtonIcon();
+
     // Save state
     localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+}
+
+/**
+ * Update toggle button icon based on collapsed state
+ */
+function updateToggleButtonIcon() {
+    if (!projectElements.sidebarToggle) return;
+
+    const icon = sidebarCollapsed
+        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="11 17 6 12 11 7"/>
+            <polyline points="18 17 13 12 18 7"/>
+           </svg>`
+        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="13 7 18 12 13 17"/>
+            <polyline points="6 7 11 12 6 17"/>
+           </svg>`;
+
+    projectElements.sidebarToggle.innerHTML = icon;
+    projectElements.sidebarToggle.title = sidebarCollapsed ? '접기 / Collapse' : '펼치기 / Expand';
 }
 
 /**
