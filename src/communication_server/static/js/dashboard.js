@@ -858,6 +858,12 @@ async function handleAgentRegistration() {
         // Get selected project ID for the new agent
         const selectedProject = typeof getSelectedProjectId === 'function' ? getSelectedProjectId() : null;
 
+        // Validate: project must be selected
+        if (!selectedProject) {
+            showRegistrationError('프로젝트를 선택해야 합니다. Please select a project first.');
+            return;
+        }
+
         // Use persistent agent creation API
         const result = await createAgent({
             name: nickname,
