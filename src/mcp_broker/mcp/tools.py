@@ -27,7 +27,7 @@ class RegisterProtocolInput(BaseModel):
 
     name: str = Field(description="Protocol identifier in snake_case")
     version: str = Field(description="Semantic version (e.g., '1.0.0')")
-    schema: dict = Field(description="JSON Schema for message validation")
+    json_schema: dict = Field(description="JSON Schema for message validation")
     capabilities: list[str] | None = Field(
         default=None,
         description="Supported communication patterns",
@@ -251,7 +251,7 @@ class MCPTools:
         protocol = ProtocolDefinition(
             name=parsed.name,
             version=parsed.version,
-            message_schema=parsed.schema,
+            message_schema=parsed.json_schema,
             capabilities=parsed.capabilities or ["point_to_point"],
             metadata=metadata,
         )
