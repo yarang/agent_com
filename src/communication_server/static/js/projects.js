@@ -280,6 +280,8 @@ function setupKeyboardShortcuts() {
 window.initProjectSidebar = initProjectSidebar;
 window.selectProject = selectProject;
 window.getSelectedProjectId = getSelectedProjectId;
+window.loadProjects = loadProjects;
+window.renderProjectList = renderProjectList;
 window.toggleSidebar = toggleSidebar;
 window.handleProjectDblClick = handleProjectDblClick;
 
