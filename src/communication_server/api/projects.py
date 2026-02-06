@@ -329,31 +329,54 @@ async def delete_project(
 
 @router.get("")
 @router.get("/")
-async def list_projects():
+async def list_projects(
+    user: User = Depends(get_current_user),
+    registry=Depends(get_project_registry),
+):
     """
     Get list of all projects with agent counts.
 
-    Returns a list of projects with:
+    Returns all registered projects with:
     - project_id: Project identifier
+    - name: Project name
+    - description: Project description
     - agent_count: Total number of agents in project
     - active_count: Number of online/active agents
     - is_online: Whether project has any active agents
 
-    For agents without a project, returns a special entry with project_id "_none".
+    Includes projects with 0 agents.
     """
-    registry = get_agent_registry()
-    project_counts = await registry.get_project_agent_counts()
+    # Get all projects from ProjectRegistry
+    all_projects = await registry.list_projects(include_inactive=False)
 
+    # Get agent counts from agent registry
+    agent_registry = get_agent_registry()
+    project_counts = await agent_registry.get_project_agent_counts()
+
+    # Build project list with combined data
     projects = []
-    for project_id, counts in project_counts.items():
-        # Display name for agents without project
-        display_id = project_id if project_id != "_none" else None
-        display_name = "All Agents" if project_id == "_none" else project_id
 
+    # Add "All Agents" entry first (for agents without project)
+    none_counts = project_counts.get("_none", {"total": 0, "online": 0})
+    projects.append(
+        {
+            "project_id": None,
+            "name": "All Agents",
+            "description": "",
+            "agent_count": none_counts["total"],
+            "active_count": none_counts["online"],
+            "is_online": none_counts["online"] > 0,
+        }
+    )
+
+    # Add all registered projects
+    for project in all_projects:
+        counts = project_counts.get(project.project_id, {"total": 0, "online": 0})
         projects.append(
             {
-                "project_id": display_id,
-                "name": display_name,
+                "project_id": project.project_id,
+                "name": project.metadata.name,
+                "description": project.metadata.description,
                 "agent_count": counts["total"],
                 "active_count": counts["online"],
                 "is_online": counts["online"] > 0,
