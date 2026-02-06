@@ -11,6 +11,7 @@
 const mcState = {
     agents: [],
     messages: [],
+    tasks: [],  // Task management state
     currentSpec: null,
     pendingDecisions: 0,
     wsConnected: false,
@@ -47,6 +48,12 @@ const mcElements = {
     // Project Management
     projectSelect: null,
     createProjectBtn: null,
+
+    // Task Management
+    tasksList: null,
+    refreshTasksBtn: null,
+    createTaskBtn: null,
+    taskStatusFilter: null,
 
     // Modals
     createAgentModal: null,
@@ -106,6 +113,16 @@ function cacheMCElements() {
     mcElements.rejectChangesBtn = document.getElementById('rejectChangesBtn');
     mcElements.approveChangesBtn = document.getElementById('approveChangesBtn');
 
+    // Task Management
+    mcElements.tasksList = document.getElementById('tasksList');
+    mcElements.refreshTasksBtn = document.getElementById('refreshTasksBtn');
+    mcElements.createTaskBtn = document.getElementById('createTaskBtn');
+    mcElements.taskStatusFilter = document.getElementById('taskStatusFilter');
+    mcElements.pendingDecisionsBadge = document.getElementById('pendingDecisionsBadge');
+    mcElements.diffViewer = document.getElementById('diffViewer');
+    mcElements.rejectChangesBtn = document.getElementById('rejectChangesBtn');
+    mcElements.approveChangesBtn = document.getElementById('approveChangesBtn');
+
     // Connection Status
     mcElements.wsConnectionStatus = document.getElementById('wsConnectionStatus');
 
@@ -138,6 +155,11 @@ function setupMCEventListeners() {
 
     // Refresh agents button
     mcElements.refreshAgentsBtn?.addEventListener('click', loadMissionControlData);
+
+    // Task management event listeners
+    mcElements.refreshTasksBtn?.addEventListener('click', loadMissionControlData);
+    mcElements.createTaskBtn?.addEventListener('click', showCreateTaskModal);
+    mcElements.taskStatusFilter?.addEventListener('change', renderTaskList);
 
     // Chat input
     mcElements.sendMessageBtn?.addEventListener('click', handleSendMessage);
@@ -204,26 +226,31 @@ async function loadMissionControlData() {
         if (!mcState.currentProjectId) {
             mcState.agents = [];
             mcState.messages = [];
+            mcState.tasks = [];
             renderAgentList();
             renderChatMessages();
+            renderTaskList();
             return;
         }
 
-        // Fetch agents and messages for current project in parallel
-        const [agentsData, messagesData, specData] = await Promise.all([
-            fetchProjectAgents(mcState.currentProjectId).catch(() => ({ agents: [] })),
+        // Fetch agents, messages, tasks, and spec for current project in parallel
+        const [agentsData, messagesData, tasksData, specData] = await Promise.all([
+            fetchAgentsList({ project_id: mcState.currentProjectId }).catch(() => ({ agents: [] })),
             fetchProjectMessages(mcState.currentProjectId).catch(() => ({ messages: [] })),
+            fetchTasks({ project_id: mcState.currentProjectId }).catch(() => ({ tasks: [] })),
             fetchCurrentSpec().catch(() => null),
         ]);
 
         // Update state
         mcState.agents = agentsData.agents || [];
         mcState.messages = messagesData.messages || [];
+        mcState.tasks = tasksData.tasks || [];
         mcState.currentSpec = specData;
 
         // Update UI
         renderAgentList();
         renderChatMessages();
+        renderTaskList();
         updatePendingDecisionsBadge();
         renderCurrentSpec();
 
@@ -948,6 +975,373 @@ window.loadProjects = loadProjects;
 window.onProjectChange = onProjectChange;
 window.showCreateProjectModal = showCreateProjectModal;
 window.handleCreateProject = handleCreateProject;
+
+// ==================== Task Management Functions ====================
+
+/**
+ * Render task list in the Tasks section
+ */
+function renderTaskList() {
+    if (!mcElements.tasksList) return;
+
+    // Get filter value
+    const statusFilter = mcElements.taskStatusFilter?.value || '';
+
+    // Filter tasks based on selected status
+    let filteredTasks = mcState.tasks;
+    if (statusFilter) {
+        filteredTasks = mcState.tasks.filter(task => task.status === statusFilter);
+    }
+
+    if (filteredTasks.length === 0) {
+        mcElements.tasksList.innerHTML = `
+            <div class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                <p>No tasks found</p>
+                ${statusFilter ? '<small>Try clearing the status filter</small>' : '<small>Create a task to get started</small>'}
+            </div>
+        `;
+        return;
+    }
+
+    mcElements.tasksList.innerHTML = filteredTasks.map(task => createTaskItem(task)).join('');
+}
+
+/**
+ * Create a task item HTML
+ * @param {Object} task - Task object
+ * @returns {string} HTML string for task item
+ */
+function createTaskItem(task) {
+    const { id, title, description, status, priority, assigned_to, due_date } = task;
+
+    // Status badge styling
+    const statusConfig = {
+        pending: { class: 'status-pending', label: 'Pending' },
+        in_progress: { class: 'status-in-progress', label: 'In Progress' },
+        review: { class: 'status-review', label: 'Review' },
+        completed: { class: 'status-completed', label: 'Completed' },
+        blocked: { class: 'status-blocked', label: 'Blocked' },
+    };
+
+    const statusInfo = statusConfig[status] || { class: 'status-pending', label: status };
+
+    // Priority badge styling
+    const priorityConfig = {
+        low: { class: 'priority-low', label: 'Low' },
+        medium: { class: 'priority-medium', label: 'Medium' },
+        high: { class: 'priority-high', label: 'High' },
+        critical: { class: 'priority-critical', label: 'Critical' },
+    };
+
+    const priorityInfo = priorityConfig[priority] || { class: 'priority-medium', label: priority || 'Medium' };
+
+    // Find assigned agent name
+    const assignedAgent = assigned_to ? mcState.agents.find(a => a.id === assigned_to || a.agent_id === assigned_to) : null;
+    const assignedAgentName = assignedAgent?.nickname || assignedAgent?.name || 'Unassigned';
+
+    // Format due date
+    let dueDateDisplay = '';
+    if (due_date) {
+        const dueDate = new Date(due_date);
+        const now = new Date();
+        const isOverdue = dueDate < now && status !== 'completed';
+        dueDateDisplay = `
+            <div class="task-due-date ${isOverdue ? 'overdue' : ''}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>${dueDate.toLocaleDateString()}</span>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="task-item" data-task-id="${escapeHtml(id)}">
+            <div class="task-header">
+                <div class="task-status-badges">
+                    <span class="task-status-badge ${statusInfo.class}">${statusInfo.label}</span>
+                    <span class="task-priority-badge ${priorityInfo.class}">${priorityInfo.label}</span>
+                </div>
+                <div class="task-actions">
+                    <button class="task-action-btn" onclick="handleTaskStatusUpdate('${escapeHtml(id)}', 'completed')" title="Mark Complete">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </button>
+                    <button class="task-action-btn" onclick="handleTaskEdit('${escapeHtml(id)}')" title="Edit Task">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                    </button>
+                    <button class="task-action-btn" onclick="handleTaskDelete('${escapeHtml(id)}')" title="Delete Task">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="task-content">
+                <div class="task-title">${escapeHtml(title)}</div>
+                ${description ? `<div class="task-description">${escapeHtml(description)}</div>` : ''}
+            </div>
+            <div class="task-footer">
+                <div class="task-assignment">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span>${escapeHtml(assignedAgentName)}</span>
+                </div>
+                ${dueDateDisplay}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Handle task creation
+ * @param {Object} taskData - Task data from form
+ */
+async function handleCreateTask(taskData) {
+    try {
+        const result = await createTask({
+            ...taskData,
+            project_id: mcState.currentProjectId,
+        });
+
+        // Show success message
+        showNotification('Task created successfully', 'success');
+
+        // Reload tasks
+        await loadMissionControlData();
+
+        return result;
+    } catch (error) {
+        console.error('Error creating task:', error);
+        showNotification('Failed to create task: ' + (error.message || 'Unknown error'), 'error');
+        throw error;
+    }
+}
+
+/**
+ * Handle task status update
+ * @param {string} taskId - Task ID
+ * @param {string} newStatus - New status
+ */
+async function handleTaskStatusUpdate(taskId, newStatus) {
+    try {
+        await updateTask(taskId, { status: newStatus });
+        showNotification('Task status updated', 'success');
+        await loadMissionControlData();
+    } catch (error) {
+        console.error('Error updating task status:', error);
+        showNotification('Failed to update task status', 'error');
+    }
+}
+
+/**
+ * Handle task edit (opens edit modal)
+ * @param {string} taskId - Task ID
+ */
+function handleTaskEdit(taskId) {
+    // For now, just show an alert - in future, open an edit modal
+    const task = mcState.tasks.find(t => t.id === taskId);
+    if (task) {
+        alert(`Edit Task: ${task.title}\n\nThis will open an edit modal in a future update.`);
+    }
+}
+
+/**
+ * Handle task deletion
+ * @param {string} taskId - Task ID
+ */
+async function handleTaskDelete(taskId) {
+    if (!confirm('Are you sure you want to delete this task?')) {
+        return;
+    }
+
+    try {
+        await deleteTask(taskId);
+        showNotification('Task deleted successfully', 'success');
+        await loadMissionControlData();
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        showNotification('Failed to delete task', 'error');
+    }
+}
+
+/**
+ * Assign task to an agent
+ * @param {string} taskId - Task ID
+ */
+async function handleAssignTaskToAgent(taskId) {
+    // Get list of available agents
+    const agentOptions = mcState.agents.map(agent => {
+        const id = agent.id || agent.agent_id;
+        const name = agent.nickname || agent.name;
+        return `${id}:${name}`;
+    }).join('\n');
+
+    if (mcState.agents.length === 0) {
+        showNotification('No agents available to assign', 'warning');
+        return;
+    }
+
+    const selection = prompt(
+        'Enter agent ID to assign:\n\n' +
+        mcState.agents.map(agent => {
+            const id = agent.id || agent.agent_id;
+            const name = agent.nickname || agent.name;
+            return `- ${id}: ${name}`;
+        }).join('\n')
+    );
+
+    if (!selection) return;
+
+    try {
+        await assignTask(taskId, { assigned_to: selection });
+        showNotification('Task assigned successfully', 'success');
+        await loadMissionControlData();
+    } catch (error) {
+        console.error('Error assigning task:', error);
+        showNotification('Failed to assign task', 'error');
+    }
+}
+
+/**
+ * Show notification message
+ * @param {string} message - Notification message
+ * @param {string} type - Notification type (success, error, warning, info)
+ */
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <span>${escapeHtml(message)}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+/**
+ * Show create task modal
+ */
+function showCreateTaskModal() {
+    // Create modal HTML
+    const modalHtml = `
+        <div class="modal" id="createTaskModal" style="display: flex;">
+            <div class="modal-overlay" onclick="closeModal('createTaskModal')"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Task</h3>
+                    <button class="btn-close" onclick="closeModal('createTaskModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="createTaskForm">
+                        <div class="form-group">
+                            <label for="taskTitle">Title *</label>
+                            <input type="text" id="taskTitle" class="form-control" placeholder="Enter task title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDescription">Description</label>
+                            <textarea id="taskDescription" class="form-control" rows="3" placeholder="Enter task description"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="taskPriority">Priority</label>
+                                <select id="taskPriority" class="form-control">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="taskStatus">Status</label>
+                                <select id="taskStatus" class="form-control">
+                                    <option value="pending" selected>Pending</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="review">Review</option>
+                                    <option value="blocked">Blocked</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskAssignee">Assign To</label>
+                            <select id="taskAssignee" class="form-control">
+                                <option value="">Unassigned</option>
+                                ${mcState.agents.map(agent => {
+                                    const id = agent.id || agent.agent_id;
+                                    const name = agent.nickname || agent.name;
+                                    return `<option value="${escapeHtml(id)}">${escapeHtml(name)}</option>`;
+                                }).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="taskDueDate">Due Date (optional)</label>
+                            <input type="datetime-local" id="taskDueDate" class="form-control">
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-secondary" onclick="closeModal('createTaskModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Task</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Remove existing modal if present
+    const existingModal = document.getElementById('createTaskModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Set up form submission
+    const form = document.getElementById('createTaskForm');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const taskData = {
+            title: document.getElementById('taskTitle').value.trim(),
+            description: document.getElementById('taskDescription').value.trim(),
+            priority: document.getElementById('taskPriority').value,
+            status: document.getElementById('taskStatus').value,
+            assigned_to: document.getElementById('taskAssignee').value || null,
+            due_date: document.getElementById('taskDueDate').value || null,
+        };
+
+        await handleCreateTask(taskData);
+        closeModal('createTaskModal');
+    });
+}
+
+// Make task functions globally available
+window.handleTaskStatusUpdate = handleTaskStatusUpdate;
+window.handleTaskEdit = handleTaskEdit;
+window.handleTaskDelete = handleTaskDelete;
+window.handleAssignTaskToAgent = handleAssignTaskToAgent;
+window.handleCreateTask = handleCreateTask;
+window.showNotification = showNotification;
+window.showCreateTaskModal = showCreateTaskModal;
 
 // Initialize Mission Control when DOM is ready
 if (document.readyState === 'loading') {

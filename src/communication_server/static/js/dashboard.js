@@ -246,13 +246,13 @@ async function loadInitialData() {
         // Get selected project ID for filtering
         const selectedProject = typeof getSelectedProjectId === 'function' ? getSelectedProjectId() : null;
 
-        // Fetch all data in parallel
+        // Fetch all data in parallel - use persistent agent API
         const [agentsData, statsData, activityData, timelineData, registeredAgentsData, projectsData] = await Promise.all([
-            fetchAgents(selectedProject).catch(() => ({ agents: [] })),
+            fetchAgentsList({ project_id: selectedProject, is_active: true }).catch(() => ({ agents: [] })),
             fetchStatistics().catch(() => null),
             fetchActivity().catch(() => null),
             fetchTimeline(50).catch(() => []),
-            fetchRegisteredAgents().catch(() => ({ agents: [] })),
+            fetchAgentsList({ project_id: selectedProject }).catch(() => ({ agents: [] })),
             fetchProjects().catch(() => ({ projects: [] })),
         ]);
 
@@ -292,9 +292,9 @@ async function refreshData() {
         // Get selected project ID for filtering
         const selectedProject = typeof getSelectedProjectId === 'function' ? getSelectedProjectId() : null;
 
-        // Fetch all data in parallel
+        // Fetch all data in parallel - use persistent agent API
         const [agentsData, statsData, activityData, timelineData] = await Promise.all([
-            fetchAgents(selectedProject).catch(() => null),
+            fetchAgentsList({ project_id: selectedProject, is_active: true }).catch(() => null),
             fetchStatistics().catch(() => null),
             fetchActivity().catch(() => null),
             fetchTimeline(50).catch(() => null),
@@ -855,8 +855,21 @@ async function handleAgentRegistration() {
     `;
 
     try {
-        const result = await createAgentToken(nickname);
-        showRegistrationResult(result.token, nickname);
+        // Get selected project ID for the new agent
+        const selectedProject = typeof getSelectedProjectId === 'function' ? getSelectedProjectId() : null;
+
+        // Use persistent agent creation API
+        const result = await createAgent({
+            name: nickname,
+            agent_type: 'worker',
+            nickname: nickname,
+            project_id: selectedProject,
+            capabilities: ['chat', 'task'],
+            config: {},
+        });
+
+        // Show success with the created agent's ID
+        showRegistrationResult(result.id || result.agent_id, nickname);
         dashboardElements.agentNickname.value = '';
         await loadRegisteredAgents();
 
@@ -928,7 +941,11 @@ async function handleCopyApiKey() {
  */
 async function loadRegisteredAgents() {
     try {
-        const data = await fetchRegisteredAgents();
+        // Get selected project ID for filtering
+        const selectedProject = typeof getSelectedProjectId === 'function' ? getSelectedProjectId() : null;
+
+        // Use persistent agent API
+        const data = await fetchAgentsList({ project_id: selectedProject });
         registeredAgents = data.agents || [];
         renderAgentManagementTable();
     } catch (error) {

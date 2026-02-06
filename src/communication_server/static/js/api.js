@@ -698,6 +698,295 @@ async function fetchTranslations(language) {
     }
 }
 
+// ==================== Agent Persistence API ====================
+
+/**
+ * Create a new agent with persistent storage
+ * @param {Object} agentData - Agent data
+ * @param {string} agentData.project_id - Project ID
+ * @param {string} agentData.name - Agent name
+ * @param {string} agentData.agent_type - Agent type (worker, supervisor, orchestrator)
+ * @param {string} agentData.nickname - Agent nickname
+ * @param {string[]} agentData.capabilities - Agent capabilities array
+ * @param {Object} agentData.config - Agent configuration object
+ * @returns {Promise<Object>} Created agent with id, project_id, name, nickname, agent_type, status, capabilities, config, is_active, created_at, updated_at
+ */
+async function createAgent(agentData) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/agents`, {
+            method: 'POST',
+            body: JSON.stringify(agentData),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating agent:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch agents list with optional filters
+ * @param {Object} options - Query options
+ * @param {string} [options.project_id] - Filter by project ID
+ * @param {string} [options.status] - Filter by status
+ * @param {boolean} [options.is_active] - Filter by active status
+ * @param {number} [options.limit] - Limit number of results
+ * @param {number} [options.offset] - Offset for pagination
+ * @returns {Promise<Object>} Response with agents array, total, limit, offset
+ */
+async function fetchAgentsList(options = {}) {
+    const { project_id = null, status = null, is_active = null, limit = 100, offset = 0 } = options;
+    const params = new URLSearchParams();
+    if (project_id) params.append('project_id', project_id);
+    if (status) params.append('status', status);
+    if (is_active !== null) params.append('is_active', is_active);
+    params.append('limit', limit);
+    params.append('offset', offset);
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/agents?${params}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching agents list:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get agent details by ID
+ * @param {string} agentId - Agent ID
+ * @returns {Promise<Object>} Agent object
+ */
+async function getAgentById(agentId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/agents/${agentId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting agent by ID:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update agent details
+ * @param {string} agentId - Agent ID
+ * @param {Object} updates - Fields to update
+ * @param {string} [updates.nickname] - New nickname
+ * @param {string} [updates.status] - New status
+ * @param {string[]} [updates.capabilities] - New capabilities array
+ * @param {Object} [updates.config] - New configuration
+ * @param {boolean} [updates.is_active] - Active status
+ * @returns {Promise<Object>} Updated agent
+ */
+async function updateAgent(agentId, updates) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/agents/${agentId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating agent:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete agent by ID
+ * @param {string} agentId - Agent ID
+ * @returns {Promise<Object>} Deletion confirmation with message
+ */
+async function deleteAgentById(agentId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/agents/${agentId}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting agent by ID:', error);
+        throw error;
+    }
+}
+
+// ==================== Task Management API ====================
+
+/**
+ * Create a new task
+ * @param {Object} taskData - Task data
+ * @param {string} taskData.project_id - Project ID
+ * @param {string} [taskData.room_id] - Optional room ID
+ * @param {string} taskData.title - Task title
+ * @param {string} taskData.description - Task description
+ * @param {string} [taskData.status] - Task status (pending, in_progress, review, completed, blocked)
+ * @param {string} [taskData.priority] - Task priority (low, medium, high, critical)
+ * @param {string} [taskData.assigned_to] - Agent ID assigned to task
+ * @param {string[]} [taskData.dependencies] - Array of task IDs this task depends on
+ * @param {string} [taskData.due_date] - Optional due date ISO string
+ * @returns {Promise<Object>} Created task with id
+ */
+async function createTask(taskData) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks`, {
+            method: 'POST',
+            body: JSON.stringify(taskData),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error creating task:', error);
+        throw error;
+    }
+}
+
+/**
+ * Fetch tasks with optional filters
+ * @param {Object} options - Query options
+ * @param {string} [options.project_id] - Filter by project ID
+ * @param {string} [options.room_id] - Filter by room ID
+ * @param {string} [options.status] - Filter by status
+ * @param {string} [options.assigned_to] - Filter by assigned agent ID
+ * @param {string} [options.priority] - Filter by priority
+ * @param {number} [options.limit] - Limit number of results
+ * @param {number} [options.offset] - Offset for pagination
+ * @returns {Promise<Object>} Response with tasks array, total, limit, offset
+ */
+async function fetchTasks(options = {}) {
+    const { project_id = null, room_id = null, status = null, assigned_to = null, priority = null, limit = 100, offset = 0 } = options;
+    const params = new URLSearchParams();
+    if (project_id) params.append('project_id', project_id);
+    if (room_id) params.append('room_id', room_id);
+    if (status) params.append('status', status);
+    if (assigned_to) params.append('assigned_to', assigned_to);
+    if (priority) params.append('priority', priority);
+    params.append('limit', limit);
+    params.append('offset', offset);
+
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks?${params}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get task details by ID with dependencies
+ * @param {string} taskId - Task ID
+ * @returns {Promise<Object>} Task object with dependencies
+ */
+async function getTaskById(taskId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting task by ID:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update task details
+ * @param {string} taskId - Task ID
+ * @param {Object} updates - Fields to update
+ * @param {string} [updates.title] - New title
+ * @param {string} [updates.description] - New description
+ * @param {string} [updates.status] - New status
+ * @param {string} [updates.priority] - New priority
+ * @param {string} [updates.assigned_to] - New assigned agent ID
+ * @param {string[]} [updates.dependencies] - New dependencies array
+ * @param {string} [updates.due_date] - New due date
+ * @returns {Promise<Object>} Updated task
+ */
+async function updateTask(taskId, updates) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error updating task:', error);
+        throw error;
+    }
+}
+
+/**
+ * Delete task by ID
+ * @param {string} taskId - Task ID
+ * @returns {Promise<Object>} Deletion confirmation
+ */
+async function deleteTask(taskId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        throw error;
+    }
+}
+
+/**
+ * Assign task to an agent or user
+ * @param {string} taskId - Task ID
+ * @param {Object} assignment - Assignment details
+ * @param {string} assignment.assigned_to - Agent ID or user ID to assign to
+ * @returns {Promise<Object>} Updated task
+ */
+async function assignTask(taskId, assignment) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}/assign`, {
+            method: 'POST',
+            body: JSON.stringify(assignment),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error assigning task:', error);
+        throw error;
+    }
+}
+
 /**
  * Copy text to clipboard
  * @param {string} text - Text to copy
@@ -1046,6 +1335,19 @@ if (typeof module !== 'undefined' && module.exports) {
         unassignAgentFromProject,
         sendProjectMessage,
         getProjectMessages,
+        // Agent Persistence API
+        createAgent,
+        fetchAgentsList,
+        getAgentById,
+        updateAgent,
+        deleteAgentById,
+        // Task Management API
+        createTask,
+        fetchTasks,
+        getTaskById,
+        updateTask,
+        deleteTask,
+        assignTask,
         // Auth redirect
         fetchWithAuth,
         handleUnauthorizedResponse,
@@ -1513,6 +1815,19 @@ if (typeof window !== 'undefined') {
     window.unassignAgentFromProject = unassignAgentFromProject;
     window.sendProjectMessage = sendProjectMessage;
     window.getProjectMessages = getProjectMessages;
+    // Agent Persistence API
+    window.createAgent = createAgent;
+    window.fetchAgentsList = fetchAgentsList;
+    window.getAgentById = getAgentById;
+    window.updateAgent = updateAgent;
+    window.deleteAgentById = deleteAgentById;
+    // Task Management API
+    window.createTask = createTask;
+    window.fetchTasks = fetchTasks;
+    window.getTaskById = getTaskById;
+    window.updateTask = updateTask;
+    window.deleteTask = deleteTask;
+    window.assignTask = assignTask;
     // Mediator management
     window.fetchMediatorModels = fetchMediatorModels;
     window.createMediatorModel = createMediatorModel;
