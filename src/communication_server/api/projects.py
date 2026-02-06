@@ -75,10 +75,10 @@ def get_stats_service(
 
 
 def get_project_registry():
-    """Get the project registry instance."""
-    from mcp_broker.project.registry import ProjectRegistry
+    """Get the global project registry singleton instance."""
+    from mcp_broker.project.registry import get_project_registry as get_global_project_registry
 
-    return ProjectRegistry()
+    return get_global_project_registry()
 
 
 # In-memory message storage for project chat
@@ -330,7 +330,6 @@ async def delete_project(
 @router.get("")
 @router.get("/")
 async def list_projects(
-    user: User = Depends(get_current_user),
     registry=Depends(get_project_registry),
 ):
     """
@@ -743,12 +742,12 @@ async def get_project_messages(
 # ==================== WebSocket Broadcasting ====================
 
 
-async def _broadcast_project_event(project_id: str, event: dict):
+async def _broadcast_project_event(_project_id: str, event: dict):
     """
     Broadcast a project-related event to all connected WebSocket clients.
 
     Args:
-        project_id: Project ID
+        _project_id: Project ID (reserved for future filtering)
         event: Event data to broadcast
     """
     # Get the connection manager
