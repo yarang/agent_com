@@ -4,6 +4,11 @@ REST API endpoints for Communication Server.
 Provides API routes for communications, meetings, decisions, status, authentication, i18n, projects, agents, security, and chat.
 """
 
+# Agent Communication Core API routers (AgentDB, TaskDB)
+from agent_comm_core.api.v1.agents import router as agent_core_agents_router
+from agent_comm_core.api.v1.tasks import router as agent_core_tasks_router
+
+# Communication Server API routers
 from communication_server.api.agent_comm import router as agent_comm_router
 from communication_server.api.auth import router as auth_router
 from communication_server.api.chat import router as chat_router
@@ -35,4 +40,7 @@ __all__ = [
     "chat_router",
     # SPEC-AGENT-COMM-001
     "agent_comm_router",
+    # SPEC-AGENT-PERSISTENCE-001 (AgentDB, TaskDB)
+    "agent_core_agents_router",
+    "agent_core_tasks_router",
 ]

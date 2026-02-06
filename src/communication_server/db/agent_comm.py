@@ -69,17 +69,14 @@ class AgentCommunicationDB(Base):
         DateTime(timezone=True),
         default=datetime.utcnow,
         nullable=False,
-        index=True,
     )
     sender_id: Mapped[UUID] = mapped_column(
         Uuid,
         nullable=False,
-        index=True,
     )
     receiver_id: Mapped[UUID] = mapped_column(
         Uuid,
         nullable=False,
-        index=True,
     )
     message_content: Mapped[str] = mapped_column(
         Text,
@@ -88,7 +85,6 @@ class AgentCommunicationDB(Base):
     topic: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
-        index=True,
     )
 
     # Relationships
@@ -147,7 +143,6 @@ class AgentMeetingDB(Base):
         SQLEnum(MeetingStatus),
         default=MeetingStatus.PENDING,
         nullable=False,
-        index=True,
     )
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),

@@ -11,6 +11,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Agent and Task Persistence System (SPEC-AGENT-PERSISTENCE-001)
+- **AgentDB Model** - Complete database persistence for AI agents
+  - Agents table with UUID primary key and project association
+  - Status tracking (online, offline, busy, error)
+  - Capabilities management (JSON array)
+  - Flexible configuration (JSON object)
+  - Active state flag for authentication control
+  - Unique constraint on (project_id, name)
+  - Cascade delete to API keys and chat participants
+
+- **TaskDB Model** - Complete database persistence for agent tasks
+  - Tasks table with UUID primary key and project association
+  - Optional chat room association
+  - Status tracking (pending, in_progress, review, completed, blocked, cancelled)
+  - Priority levels (low, medium, high, critical)
+  - Task assignment to agents or users
+  - Dependency management with JSON array
+  - Automatic timestamp management (started_at, completed_at)
+  - Due date tracking and result storage (JSON)
+
+- **Agent API Endpoints** (`/api/v1/agents`)
+  - `POST /api/v1/agents` - Create new agent
+  - `GET /api/v1/agents` - List agents with pagination and filtering
+  - `GET /api/v1/agents/{id}` - Get agent by ID
+  - `PATCH /api/v1/agents/{id}` - Update agent (partial updates)
+  - `DELETE /api/v1/agents/{id}` - Delete agent (CASCADE)
+
+- **Task API Endpoints** (`/api/v1/tasks`)
+  - `POST /api/v1/tasks` - Create new task
+  - `GET /api/v1/tasks` - List tasks with pagination and filtering
+  - `GET /api/v1/tasks/{id}` - Get task by ID
+  - `PATCH /api/v1/tasks/{id}` - Update task (partial updates)
+  - `DELETE /api/v1/tasks/{id}` - Delete task
+  - `POST /api/v1/tasks/{id}/assign` - Assign task to agent/user
+
+- **Foreign Key Constraint Fixes** - Referential integrity for agent_id references
+  - FK constraint on `chat_participants.agent_id` -> `agents.id` (CASCADE)
+  - FK constraint on `agent_api_keys.agent_id` -> `agents.id` (CASCADE)
+  - Relationship definitions for AgentDB -> AgentApiKeyDB, ChatParticipantDB
+
+- **Database Migration** - Alembic migration `003_create_agent_and_task_tables`
+  - Creates agents and tasks tables with proper indexes
+  - Handles orphaned agent_id values by creating placeholder agents
+  - Applies foreign key constraints to existing tables
+  - Verified upgrade and downgrade paths
+
+#### Database Schema
+- **agents table** - Stores AI agent entities with project association
+- **tasks table** - Stores agent tasks with dependency tracking
+- **Foreign keys** - Enforces referential integrity across agent-related tables
+
+#### Documentation
+- [Agent and Task API Documentation](docs/AGENT_TASK_API.md) - Complete API reference
+- [Agent and Task Architecture](docs/AGENT_TASK_ARCHITECTURE.md) - System architecture and design
+
+### Changed
+
+#### Data Persistence
+- **Agent data** now persists across application restarts (previously in-memory only)
+- **Task data** now persists across application restarts (previously in-memory only)
+- **No data loss** on page refresh or server restart
+
+#### Testing
+- **Integration Tests** - 30+ tests covering all Agent and Task API endpoints
+- **E2E Tests** - 11 tests verifying data persistence across refresh
+- **Test Coverage** - 85%+ target achieved for new models and endpoints
+
+---
+
+## [Unreleased]
+
+### Added
+
 #### Agent User Ownership Model (SPEC-AGENT-002)
 - **Foreign Key Constraint** - Added referential integrity between `agent_api_keys.created_by_id` and `users.id`
   - `ForeignKey("users.id", ondelete="SET NULL")` constraint on `AgentApiKeyDB.created_by_id`

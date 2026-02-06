@@ -108,6 +108,7 @@ class ChatParticipantDB(Base):
     # Participant (either agent or user, not both)
     agent_id: Mapped[UUID | None] = mapped_column(
         Uuid,
+        ForeignKey("agents.id", ondelete="CASCADE"),
         nullable=True,
         default=None,
     )
@@ -127,6 +128,7 @@ class ChatParticipantDB(Base):
 
     # Relationships
     room = relationship("ChatRoomDB", back_populates="participants")
+    agent = relationship("AgentDB", back_populates="participants")
 
     # Constraints
     __table_args__ = (

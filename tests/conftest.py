@@ -8,52 +8,48 @@ and load tests to ensure consistent test setup and data.
 import asyncio
 import os
 from collections.abc import AsyncGenerator, Generator
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from pytest_mock import MockerFixture
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from agent_comm_core.db.base import Base
-from agent_comm_core.db.database import get_db_session
+
+# Agent and Task persistence models
+from agent_comm_core.db.models.agent import AgentDB
+from agent_comm_core.db.models.project import ProjectDB
+from agent_comm_core.db.models.task import TaskDB
+from agent_comm_core.models.auth import User
 from agent_comm_core.models.communication import (
     Communication,
-    CommunicationCreate,
     CommunicationDirection,
 )
 from agent_comm_core.models.meeting import (
     Meeting,
-    MeetingCreate,
     MeetingMessage,
-    MeetingParticipant,
-    MeetingStatus,
 )
 from agent_comm_core.models.status import (
     AgentInfo,
     AgentRegistration,
-    AgentStatus,
-    format_agent_display_id,
 )
 from agent_comm_core.services.communication import CommunicationService
 from agent_comm_core.services.meeting import MeetingService
 from communication_server.api.status import StatisticsService
 from communication_server.services.agent_registry import AgentRegistry
 from communication_server.websocket.manager import ConnectionManager
-
+from mcp_broker.client.http_client import HTTPClient
 from mcp_broker.core.config import BrokerConfig
 from mcp_broker.core.logging import setup_logging
-from mcp_broker.models.message import Message, MessageHeaders, Priority
-from mcp_broker.models.protocol import ProtocolDefinition, ProtocolInfo, ProtocolMetadata
-from mcp_broker.models.session import Session, SessionCapabilities, SessionStatus
 from mcp_broker.mcp.meeting_tools import MeetingMCPTools
-from mcp_broker.client.http_client import HTTPClient
-
+from mcp_broker.models.message import Message, MessageHeaders
+from mcp_broker.models.protocol import ProtocolDefinition, ProtocolMetadata
+from mcp_broker.models.session import Session, SessionCapabilities
 
 # =============================================================================
 # Configuration
@@ -67,9 +63,11 @@ def configure_logging() -> None:
 
 
 # Test database URL - can be overridden by environment
+# Default to SQLite for easier local testing
+# Use file-based DB instead of :memory: for better test isolation
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/agent_comm_test",
+    "sqlite+aiosqlite:///.test_db.sqlite3",
 )
 
 
@@ -85,17 +83,44 @@ async def test_engine():
     This fixture creates an engine, runs migrations/creates tables,
     and yields the engine. After the test, it drops all tables.
     """
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        echo=False,
-        pool_pre_ping=True,
-        pool_size=5,
-        max_overflow=10,
-    )
+    import os
+    import tempfile
 
-    # Create all tables
+    # Check if using SQLite
+    is_sqlite = TEST_DATABASE_URL.startswith("sqlite+")
+
+    if is_sqlite:
+        # Create a temporary file for SQLite database
+        # This ensures each test gets a fresh database
+        fd, db_path = tempfile.mkstemp(suffix=".sqlite3")
+        os.close(fd)
+
+        # Use the temporary file path
+        db_url = f"sqlite+aiosqlite:///{db_path}"
+
+        # SQLite doesn't support connection pooling features
+        engine = create_async_engine(
+            db_url,
+            echo=False,
+        )
+    else:
+        # PostgreSQL and other databases support pooling
+        engine = create_async_engine(
+            TEST_DATABASE_URL,
+            echo=False,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
+        )
+        db_path = None
+
+    # Drop all existing tables first (clean slate)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.drop_all)
+
+    # Create all tables (checkfirst to handle existing schema issues)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all, checkfirst=True)
 
     yield engine
 
@@ -105,9 +130,13 @@ async def test_engine():
 
     await engine.dispose()
 
+    # Clean up temp file if it exists
+    if db_path and os.path.exists(db_path):
+        os.unlink(db_path)
+
 
 @pytest_asyncio.fixture(scope="function")
-async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
+async def db_session(test_engine) -> AsyncGenerator[AsyncSession]:
     """Create a test database session.
 
     This fixture creates a session, yields it for use in tests,
@@ -126,7 +155,7 @@ async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def clean_db(db_session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
+async def clean_db(db_session: AsyncSession) -> AsyncGenerator[AsyncSession]:
     """Clean database before and after tests.
 
     This fixture deletes all data from tables before and after tests.
@@ -262,7 +291,7 @@ async def active_meeting(sample_meeting: Meeting, clean_db: AsyncSession) -> Mee
 
 
 @pytest_asyncio.fixture
-async def communication_server(clean_db: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+async def communication_server(clean_db: AsyncSession) -> AsyncGenerator[AsyncClient]:
     """Create an AsyncClient for testing the Communication Server API.
 
     This fixture starts the FastAPI app and yields an httpx AsyncClient.
@@ -348,7 +377,7 @@ def broker_config() -> BrokerConfig:
 
 
 @pytest_asyncio.fixture
-async def http_client() -> AsyncGenerator[HTTPClient, None]:
+async def http_client() -> AsyncGenerator[HTTPClient]:
     """Create an HTTPClient for Communication Server."""
     client = HTTPClient(base_url="http://test", timeout=30.0)
     await client.ensure_client()
@@ -562,7 +591,7 @@ def chat_message(active_session: Session) -> Message:
 
 
 @pytest.fixture
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
+def event_loop() -> Generator[asyncio.AbstractEventLoop]:
     """Create event loop for async tests."""
     loop = asyncio.new_event_loop()
     yield loop
@@ -601,7 +630,7 @@ def frozen_time() -> datetime:
 
 
 @pytest.fixture
-def time_machine(frozen_time: datetime) -> Generator[datetime, None, None]:
+def time_machine(frozen_time: datetime) -> Generator[datetime]:
     """Yield a frozen time that can be used for testing.
 
     This is a conceptual fixture - actual time freezing would require
@@ -609,3 +638,112 @@ def time_machine(frozen_time: datetime) -> Generator[datetime, None, None]:
     """
     yield frozen_time
     # Time would "unfreeze" here in real implementation
+
+
+# =============================================================================
+# Agent and Task Persistence Test Fixtures
+# =============================================================================
+
+
+@pytest_asyncio.fixture
+async def test_project_with_owner(clean_db: AsyncSession) -> ProjectDB:
+    """Create a test project with owner for Agent/Task testing.
+
+    This fixture is shared across integration and E2E tests for
+    SPEC-AGENT-PERSISTENCE-001.
+    """
+    from uuid import uuid4
+
+    # Create UserDB first (required by foreign key constraint)
+    from agent_comm_core.db.models.user import UserDB
+
+    user_id = uuid4()
+    user = UserDB(
+        id=user_id,
+        username=f"testuser_{user_id.hex[:8]}",
+        email=f"test_{user_id.hex[:8]}@example.com",
+    )
+    clean_db.add(user)
+
+    # Then create ProjectDB
+    project_id = f"test-project-{user_id.hex[:8]}"
+    project = ProjectDB(
+        id=uuid4(),
+        project_id=project_id,  # Human-readable unique ID
+        name="Test Project for Agents and Tasks",
+        description="Test project for Agent and Task persistence testing",
+        owner_id=user_id,
+    )
+    clean_db.add(project)
+    await clean_db.commit()
+    await clean_db.refresh(project)
+    return project
+
+
+@pytest_asyncio.fixture
+async def test_agent_for_project(
+    clean_db: AsyncSession, test_project_with_owner: ProjectDB
+) -> AgentDB:
+    """Create a test agent for task assignment.
+
+    This fixture provides a default agent that can be used for
+    task assignment tests.
+    """
+    from uuid import uuid4
+
+    agent = AgentDB(
+        id=uuid4(),
+        project_id=test_project_with_owner.id,
+        name="Test Agent",
+        nickname="Tester",
+        agent_type="generic",
+        status="offline",
+        capabilities=["test"],
+        is_active=True,
+    )
+    clean_db.add(agent)
+    await clean_db.commit()
+    await clean_db.refresh(agent)
+    return agent
+
+
+@pytest_asyncio.fixture
+async def test_task_for_project(
+    clean_db: AsyncSession, test_project_with_owner: ProjectDB
+) -> TaskDB:
+    """Create a test task for testing.
+
+    This fixture provides a default pending task that can be used
+    for testing task operations.
+    """
+    from uuid import uuid4
+
+    task = TaskDB(
+        id=uuid4(),
+        project_id=test_project_with_owner.id,
+        title="Test Task",
+        description="Default test task",
+        status="pending",
+        priority="medium",
+        created_by=test_project_with_owner.owner_id,
+        dependencies=[],
+    )
+    clean_db.add(task)
+    await clean_db.commit()
+    await clean_db.refresh(task)
+    return task
+
+
+@pytest_asyncio.fixture
+async def test_user_for_project(test_project_with_owner: ProjectDB) -> User:
+    """Create a test user for API authentication.
+
+    This fixture creates a User object matching the project owner
+    for use in authenticated API requests.
+    """
+    return User(
+        id=test_project_with_owner.owner_id,
+        email="test@example.com",
+        name="Test User",
+        is_superuser=False,
+    )

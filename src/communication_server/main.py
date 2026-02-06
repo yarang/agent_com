@@ -19,6 +19,8 @@ from agent_comm_core.config import Config, ConfigLoader
 from agent_comm_core.db.database import close_db, get_engine, init_db
 from communication_server.api import (
     agent_comm_router,
+    agent_core_agents_router,
+    agent_core_tasks_router,
     agents_router,
     auth_router,
     chat_router,
@@ -112,6 +114,10 @@ if False:  # config.security.rate_limiting.enabled
     )
 
 # Include API routers
+# AgentDB and TaskDB routes (SPEC-AGENT-PERSISTENCE-001)
+app.include_router(agent_core_agents_router, prefix="/api/v1")
+app.include_router(agent_core_tasks_router, prefix="/api/v1")
+# Existing routes
 app.include_router(agents_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(agent_comm_router, prefix="/api/v1")

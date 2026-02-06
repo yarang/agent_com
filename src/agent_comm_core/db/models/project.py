@@ -102,6 +102,7 @@ class ProjectDB(Base):
 
     # Relationships
     owner = relationship("UserDB", backref="projects")
+    agents = relationship("AgentDB", back_populates="project")
 
     # Constraints
     __table_args__ = (UniqueConstraint("owner_id", "project_id", name="uq_owner_project_id"),)

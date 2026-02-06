@@ -3,14 +3,18 @@ Agent API Key database model with structured key format.
 """
 
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import JSON, DateTime, ForeignKey, String, UniqueConstraint, Uuid, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
 from agent_comm_core.models.common import ActorType as CreatorType
 from agent_comm_core.models.common import KeyStatus
+
+if TYPE_CHECKING:
+    pass
 
 
 class AgentApiKeyDB(Base):
@@ -41,6 +45,7 @@ class AgentApiKeyDB(Base):
     # Agent identifier
     agent_id: Mapped[UUID] = mapped_column(
         Uuid,
+        ForeignKey("agents.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
@@ -116,6 +121,9 @@ class AgentApiKeyDB(Base):
 
     # Constraints
     __table_args__ = (UniqueConstraint("project_id", "agent_id", name="uq_project_agent"),)
+
+    # Relationships
+    agent = relationship("AgentDB", back_populates="api_keys")
 
     def __repr__(self) -> str:
         return f"<AgentApiKeyDB(id={self.id}, key_id={self.key_id}, agent_id={self.agent_id})>"

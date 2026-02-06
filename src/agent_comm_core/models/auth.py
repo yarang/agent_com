@@ -42,9 +42,10 @@ class TokenData(BaseModel):
 class User(BaseModel):
     """User model for dashboard authentication."""
 
-    id: str = Field(..., description="Unique user identifier")
+    id: UUID = Field(..., description="Unique user identifier")
     username: str = Field(..., description="Username", min_length=1, max_length=100)
     role: UserRole = Field(default=UserRole.USER, description="User role")
+    is_superuser: bool = Field(default=False, description="Whether user is a superuser")
     permissions: list[str] = Field(default_factory=list, description="Granted permissions")
     is_active: bool = Field(default=True, description="Whether user is active")
     created_at: datetime = Field(
@@ -62,12 +63,12 @@ class User(BaseModel):
     @property
     def is_admin(self) -> bool:
         """Check if user has admin role."""
-        return self.role == UserRole.ADMIN
+        return self.role == UserRole.ADMIN or self.is_superuser
 
     @property
     def can_write(self) -> bool:
         """Check if user has write permissions."""
-        return self.role in (UserRole.ADMIN, UserRole.USER)
+        return self.role in (UserRole.ADMIN, UserRole.USER) or self.is_superuser
 
 
 class Agent(BaseModel):

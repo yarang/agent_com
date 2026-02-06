@@ -93,9 +93,39 @@ class AgentStatus(str, Enum):
 
     ONLINE = "online"
     OFFLINE = "offline"
-    ACTIVE = "active"
-    IDLE = "idle"
+    BUSY = "busy"
     ERROR = "error"
+
+
+# ============================================================================
+# Task Status and Priority
+# ============================================================================
+
+
+class TaskStatus(str, Enum):
+    """Status of a task.
+
+    Tracks the lifecycle state of a task.
+    """
+
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    REVIEW = "review"
+    COMPLETED = "completed"
+    BLOCKED = "blocked"
+    CANCELLED = "cancelled"
+
+
+class TaskPriority(str, Enum):
+    """Priority levels for tasks.
+
+    Indicates the urgency and importance of a task.
+    """
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
 # ============================================================================
@@ -227,7 +257,9 @@ class EntityType(str, Enum):
 
     USER = "user"
     PROJECT = "project"
+    AGENT = "agent"
     AGENT_API_KEY = "agent_api_key"
+    TASK = "task"
     COMMUNICATION = "communication"
     MEETING = "meeting"
     DECISION = "decision"
@@ -264,6 +296,8 @@ __all__ = [
     "CommonStatus",
     "ProjectStatus",
     "AgentStatus",
+    "TaskStatus",
+    "TaskPriority",
     "KeyStatus",
     "MeetingStatus",
     "DecisionStatus",

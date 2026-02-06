@@ -34,9 +34,27 @@ The MCP Broker Server is a centralized communication middleware that enables mul
   - Agent assignment to projects
   - Project archival functionality
   - Cascade delete for related data
-- **Agent Management** - Database-backed agent authentication
+
+#### Agent & Task Persistence System (NEW)
+- **Agent Management** - Full database persistence for AI agents
+  - Complete CRUD operations via REST API
+  - Agent status tracking (online, offline, busy, error)
+  - Capability management and configuration
+  - Project-based agent organization
+  - Cascade delete for related records
+  - See [Agent and Task API Documentation](docs/AGENT_TASK_API.md)
+- **Task Management** - Full database persistence for agent tasks
+  - Complete CRUD operations via REST API
+  - Task status tracking (pending, in_progress, review, completed, blocked, cancelled)
+  - Priority levels (low, medium, high, critical)
+  - Dependency management between tasks
+  - Task assignment to agents or users
+  - Automatic timestamp management
+  - See [Agent and Task Architecture](docs/AGENT_TASK_ARCHITECTURE.md)
+- **Agent API Key Management** - Database-backed agent authentication
   - API key generation and rotation
   - Token revocation support
+  - User ownership tracking
   - Capability tracking
 
 #### Chat & Mediator System
@@ -392,6 +410,82 @@ GET /
   "security": "/security/status"
 }
 ```
+
+#### Agent Endpoints
+
+```http
+POST   /api/v1/agents          # Create agent
+GET    /api/v1/agents          # List agents (paginated)
+GET    /api/v1/agents/{id}     # Get agent by ID
+PATCH  /api/v1/agents/{id}     # Update agent
+DELETE /api/v1/agents/{id}     # Delete agent (CASCADE)
+```
+
+**Authentication:** Required (JWT)
+
+**Features:**
+- Project-based agent isolation
+- Unique agent names within projects
+- Status tracking (online, offline, busy, error)
+- Capability management (JSON array)
+- Flexible configuration (JSON object)
+- CASCADE delete to API keys and chat participants
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8000/api/v1/agents \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "uuid-project-id",
+    "name": "FrontendExpert",
+    "nickname": "Frontend Expert",
+    "agent_type": "generic",
+    "capabilities": ["communicate", "create_meetings"],
+    "config": {"model": "claude-3-opus"}
+  }'
+```
+
+#### Task Endpoints
+
+```http
+POST   /api/v1/tasks                # Create task
+GET    /api/v1/tasks                # List tasks (paginated)
+GET    /api/v1/tasks/{id}           # Get task by ID
+PATCH  /api/v1/tasks/{id}           # Update task
+DELETE /api/v1/tasks/{id}           # Delete task
+POST   /api/v1/tasks/{id}/assign    # Assign task to agent/user
+```
+
+**Authentication:** Required (JWT)
+
+**Features:**
+- Project-based task isolation
+- Optional chat room association
+- Priority levels (low, medium, high, critical)
+- Dependency management with validation
+- Task assignment to agents or users
+- Automatic timestamp management (started_at, completed_at)
+- Status transitions (pending, in_progress, review, completed, blocked, cancelled)
+
+**Example Request:**
+```bash
+curl -X POST http://localhost:8000/api/v1/tasks \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_id": "uuid-project-id",
+    "title": "Implement authentication",
+    "description": "Add JWT-based authentication",
+    "priority": "high",
+    "dependencies": [],
+    "due_date": "2026-02-15T12:00:00Z"
+  }'
+```
+
+**See Also:**
+- [Agent and Task API Documentation](docs/AGENT_TASK_API.md) - Complete API reference
+- [Agent and Task Architecture](docs/AGENT_TASK_ARCHITECTURE.md) - Architecture and design
 
 ---
 
@@ -1211,6 +1305,8 @@ tail -f logs/mcp-broker.log
 
 ### Getting Help
 
+- Check the [Agent and Task API documentation](docs/AGENT_TASK_API.md)
+- Review [Agent and Task architecture](docs/AGENT_TASK_ARCHITECTURE.md)
 - Check the [API documentation](docs/api.md)
 - Review [architecture docs](docs/architecture.md)
 - Open an issue on [GitHub](https://github.com/yarang/agent_com/issues)
@@ -1252,6 +1348,8 @@ Apache License 2.0 - see [LICENSE](LICENSE) for details.
 ## Links
 
 - [Documentation](docs/)
+- [Agent and Task API Reference](docs/AGENT_TASK_API.md)
+- [Agent and Task Architecture](docs/AGENT_TASK_ARCHITECTURE.md)
 - [API Reference](docs/api.md)
 - [Architecture](docs/architecture.md)
 - [GitHub Repository](https://github.com/yarang/agent_com)
