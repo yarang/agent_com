@@ -161,3 +161,18 @@ async def get_project_repository(
     from agent_comm_core.repositories import ProjectRepository
 
     return ProjectRepository(session)
+
+
+def get_project_registry_session_factory() -> AsyncGenerator[AsyncSession]:
+    """
+    Get a database session factory for the ProjectRegistry.
+
+    This is a wrapper around db_session that returns a session factory
+    compatible with the ProjectRegistry's constructor.
+
+    Yields:
+        Async database session
+    """
+    database_url = get_database_url()
+    async with db_session(database_url=database_url) as session:
+        yield session

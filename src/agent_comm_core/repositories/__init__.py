@@ -6,7 +6,7 @@ for database operations using SQLAlchemy.
 """
 
 from abc import ABC, abstractmethod
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 from uuid import UUID
 
 from agent_comm_core.models.communication import Communication, CommunicationCreate
@@ -23,6 +23,7 @@ from agent_comm_core.models.meeting import (
 from agent_comm_core.repositories.agent_api_key import AgentApiKeyRepository
 from agent_comm_core.repositories.chat import ChatRepository
 from agent_comm_core.repositories.project import ProjectRepository
+from agent_comm_core.repositories.project_api_key import ProjectApiKeyRepository
 
 # Import the new generic SQLAlchemy base
 from agent_comm_core.repositories.sqlalchemy_base import SQLAlchemyRepositoryBase
@@ -243,5 +244,6 @@ __all__ = [
     "UserRepository",
     "AgentApiKeyRepository",
     "ProjectRepository",
+    "ProjectApiKeyRepository",
     "ChatRepository",
 ]

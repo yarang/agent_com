@@ -77,6 +77,23 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
     # Create database tables
     await init_db(database_url=database_url, drop_all=False)
 
+    # Initialize ProjectRegistry with database session factory and load projects
+    from communication_server.dependencies import get_project_registry_session_factory
+    from mcp_broker.project.registry import get_project_registry
+
+    # Initialize project registry with database support
+    # Note: We pass a lambda that creates the session factory
+    get_project_registry(db_session_factory=lambda: get_project_registry_session_factory())
+
+    # Load projects from database
+    registry = get_project_registry()
+    try:
+        loaded_count = await registry.load_from_database()
+        print(f"Loaded {loaded_count} projects from database")
+    except Exception as e:
+        print(f"Warning: Failed to load projects from database: {e}")
+        # Continue anyway - registry will operate in memory-only mode
+
     yield
 
     # Shutdown

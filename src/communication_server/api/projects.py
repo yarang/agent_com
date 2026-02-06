@@ -115,6 +115,7 @@ async def create_project(
             description=project_data.description,
             tags=project_data.tags,
             owner=user.username,
+            owner_uuid=user.id,  # Pass UUID for database persistence
         )
 
         # Return API keys (only shown on creation)

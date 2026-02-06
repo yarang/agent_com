@@ -15,6 +15,7 @@ from agent_comm_core.db.models.mediator import (
     MediatorPromptDB,
 )
 from agent_comm_core.db.models.project import ProjectDB
+from agent_comm_core.db.models.project_api_key import ProjectApiKeyDB
 from agent_comm_core.db.models.task import TaskDB
 from agent_comm_core.db.models.user import UserDB
 from agent_comm_core.models.common import AgentStatus, TaskPriority, TaskStatus
@@ -22,6 +23,7 @@ from agent_comm_core.models.common import AgentStatus, TaskPriority, TaskStatus
 __all__ = [
     "UserDB",
     "ProjectDB",
+    "ProjectApiKeyDB",
     "AgentDB",
     "AgentStatus",
     "AgentApiKeyDB",
