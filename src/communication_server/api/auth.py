@@ -101,8 +101,8 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Create tokens
-    tokens = await auth_service.create_user_tokens(user.id)
+    # Create tokens (convert UUID to string for JWT serialization)
+    tokens = await auth_service.create_user_tokens(str(user.id))
 
     return Token(
         access_token=tokens["access_token"],
