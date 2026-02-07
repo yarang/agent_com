@@ -124,7 +124,6 @@ class ProjectRegistry:
                 # Get all projects from database
                 projects_result = await project_repo.list_all(
                     limit=1000,
-                    include_archived=False,
                 )
 
                 async for db_project in projects_result:
@@ -517,9 +516,7 @@ class ProjectRegistry:
         del self._projects[project_id]
 
         # Clean up API key secrets
-        keys_to_remove = [
-            (pid, kid) for (pid, kid) in self._api_key_secrets if pid == project_id
-        ]
+        keys_to_remove = [(pid, kid) for (pid, kid) in self._api_key_secrets if pid == project_id]
         for key in keys_to_remove:
             del self._api_key_secrets[key]
 
