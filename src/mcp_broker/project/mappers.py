@@ -218,7 +218,9 @@ class ProjectMapper:
         # Create statistics (not persisted in DB, use defaults)
         statistics = ProjectStatistics()
 
-        return ProjectDefinition(
+        # Use model_construct to bypass validation when loading from DB
+        # (API keys from DB are placeholders and may be empty)
+        return ProjectDefinition.model_construct(
             project_id=db_project.project_id,
             metadata=metadata,
             api_keys=api_keys,
