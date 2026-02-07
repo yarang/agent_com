@@ -126,7 +126,10 @@ class ProjectRegistry:
                     limit=1000,
                 )
 
-                async for db_project in projects_result:
+                # Convert ScalarResult to list for iteration
+                projects_list = list(projects_result)
+
+                for db_project in projects_list:
                     # Load API keys for this project
                     api_keys_db = await key_repo.get_by_project_uuid(db_project.id)
 
