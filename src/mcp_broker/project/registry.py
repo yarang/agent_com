@@ -406,11 +406,7 @@ class ProjectRegistry:
             projects = [p for p in projects if name_filter.lower() in p.metadata.name.lower()]
 
         # Convert to public info
-        result = [
-            ProjectInfo.from_definition(p)
-            for p in projects
-            if p.metadata.discoverable or p.config.discoverable
-        ]
+        result = [ProjectInfo.from_definition(p) for p in projects if p.config.discoverable]
 
         logger.debug(
             f"Listed {len(result)} projects",
