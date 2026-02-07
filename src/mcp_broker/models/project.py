@@ -7,6 +7,7 @@ including project definitions, API keys, metadata, and configuration.
 
 from datetime import UTC, datetime
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 

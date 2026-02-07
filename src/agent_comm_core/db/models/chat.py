@@ -10,7 +10,18 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
@@ -75,12 +86,18 @@ class ChatRoomDB(Base):
     )
 
     # Relationships
-    project = relationship("ProjectDB", backref="chat_rooms")
-    creator = relationship("UserDB", backref="created_chat_rooms")
+    project = relationship("ProjectDB", backref="chat_rooms", lazy="selectin")
+    creator = relationship("UserDB", backref="created_chat_rooms", lazy="selectin")
     participants = relationship(
-        "ChatParticipantDB", back_populates="room", cascade="all, delete-orphan"
+        "ChatParticipantDB", back_populates="room", cascade="all, delete-orphan", lazy="selectin"
     )
-    messages = relationship("ChatMessageDB", back_populates="room", cascade="all, delete-orphan")
+    messages = relationship(
+        "ChatMessageDB",
+        back_populates="room",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="desc(ChatMessageDB.created_at)",
+    )
 
     def __repr__(self) -> str:
         return f"<ChatRoomDB(id={self.id}, name={self.name}, project_id={self.project_id})>"
@@ -127,13 +144,18 @@ class ChatParticipantDB(Base):
     )
 
     # Relationships
-    room = relationship("ChatRoomDB", back_populates="participants")
-    agent = relationship("AgentDB", back_populates="participants")
+    room = relationship("ChatRoomDB", back_populates="participants", lazy="joined")
+    agent = relationship("AgentDB", back_populates="participants", lazy="joined")
 
     # Constraints
     __table_args__ = (
         UniqueConstraint("room_id", "agent_id", name="uq_room_agent"),
         UniqueConstraint("room_id", "user_id", name="uq_room_user"),
+        CheckConstraint(
+            "(agent_id IS NOT NULL AND user_id IS NULL) OR "
+            "(agent_id IS NULL AND user_id IS NOT NULL)",
+            name="ck_participant_exactly_one",
+        ),
     )
 
     def __repr__(self) -> str:
@@ -161,12 +183,31 @@ class ChatMessageDB(Base):
         index=True,
     )
 
-    # Sender info
+    # Sender info - polymorphic relationship
     sender_type: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
         default=SenderType.USER.value,
+        index=True,
     )
+    # Separate nullable FKs for user and agent senders
+    # Application logic ensures only one is set based on sender_type
+    user_sender_id: Mapped[UUID | None] = mapped_column(
+        "user_sender_id",
+        Uuid,
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        default=None,
+    )
+    agent_sender_id: Mapped[UUID | None] = mapped_column(
+        "agent_sender_id",
+        Uuid,
+        ForeignKey("agents.id", ondelete="SET NULL"),
+        nullable=True,
+        default=None,
+    )
+
+    # Legacy sender_id for backward compatibility (deprecated)
     sender_id: Mapped[UUID] = mapped_column(
         Uuid,
         nullable=False,
@@ -192,10 +233,37 @@ class ChatMessageDB(Base):
     )
 
     # Relationships
-    room = relationship("ChatRoomDB", back_populates="messages")
+    room = relationship("ChatRoomDB", back_populates="messages", lazy="joined")
+    user_sender = relationship(
+        "UserDB",
+        foreign_keys=[user_sender_id],
+        back_populates="sent_messages",
+        lazy="joined",
+    )
+    agent_sender = relationship(
+        "AgentDB",
+        foreign_keys=[agent_sender_id],
+        back_populates="sent_messages",
+        lazy="joined",
+    )
+
+    # Constraints and indexes
+    __table_args__ = (
+        Index("ix_chat_messages_room_sender", "room_id", "sender_type"),
+        Index("ix_chat_messages_room_created", "room_id", "created_at"),
+    )
 
     def __repr__(self) -> str:
         return (
             f"<ChatMessageDB(id={self.id}, room_id={self.room_id}, "
             f"sender_type={self.sender_type}, sender_id={self.sender_id})>"
         )
+
+    @property
+    def actual_sender_id(self) -> UUID | None:
+        """Get the actual sender ID based on sender_type."""
+        if self.sender_type == SenderType.USER.value:
+            return self.user_sender_id
+        elif self.sender_type == SenderType.AGENT.value:
+            return self.agent_sender_id
+        return None

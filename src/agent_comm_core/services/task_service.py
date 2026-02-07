@@ -167,6 +167,15 @@ class TaskService:
                     )
             # User validation would go here when user service is available
 
+        # Map polymorphic assigned_to to specific fields
+        user_assigned_to: UUID | None = None
+        agent_assigned_to: UUID | None = None
+        if assigned_to and assigned_to_type:
+            if assigned_to_type == "agent":
+                agent_assigned_to = assigned_to
+            elif assigned_to_type == "user":
+                user_assigned_to = assigned_to
+
         # Create task with default values
         task = TaskDB(
             id=uuid4(),
@@ -176,8 +185,10 @@ class TaskService:
             description=description,
             status=TaskStatus.PENDING.value,
             priority=priority or TaskPriority.MEDIUM.value,
-            assigned_to=assigned_to,
-            assigned_to_type=assigned_to_type,
+            assigned_to=assigned_to,  # Legacy field for backward compatibility
+            assigned_to_type=assigned_to_type,  # Legacy field for backward compatibility
+            user_assigned_to=user_assigned_to,
+            agent_assigned_to=agent_assigned_to,
             created_by=created_by or uuid4(),  # Fallback to random UUID
             dependencies=dependencies or [],
             started_at=None,
@@ -408,7 +419,15 @@ class TaskService:
                     detail=f"에이전트가 비활성화되어 있어 할당할 수 없습니다: {agent.name}",
                 )
 
-        # Update task assignment
+        # Update task assignment using polymorphic foreign keys
+        if assigned_to_type == "agent":
+            task.agent_assigned_to = assigned_to
+            task.user_assigned_to = None
+        elif assigned_to_type == "user":
+            task.user_assigned_to = assigned_to
+            task.agent_assigned_to = None
+
+        # Update legacy fields for backward compatibility
         task.assigned_to = assigned_to
         task.assigned_to_type = assigned_to_type
 
@@ -430,6 +449,11 @@ class TaskService:
         """
         task = await self.get_task(task_id)
 
+        # Clear both specific assignment fields
+        task.user_assigned_to = None
+        task.agent_assigned_to = None
+
+        # Clear legacy fields for backward compatibility
         task.assigned_to = None
         task.assigned_to_type = None
 
@@ -475,7 +499,10 @@ class TaskService:
         # Auto-update timestamps based on status
         now = datetime.now(UTC)
 
-        if new_status == TaskStatus.IN_PROGRESS.value and current_status == TaskStatus.PENDING.value:
+        if (
+            new_status == TaskStatus.IN_PROGRESS.value
+            and current_status == TaskStatus.PENDING.value
+        ):
             task.started_at = now
         elif new_status in (TaskStatus.REVIEW.value, TaskStatus.COMPLETED.value):
             if not task.started_at:
@@ -696,12 +723,14 @@ class TaskService:
         # Query for tasks with due_date < now and status not completed/cancelled
         stmt = select(TaskDB).where(
             TaskDB.due_date < now,
-            TaskDB.status.in_([
-                TaskStatus.PENDING.value,
-                TaskStatus.IN_PROGRESS.value,
-                TaskStatus.BLOCKED.value,
-                TaskStatus.REVIEW.value,
-            ]),
+            TaskDB.status.in_(
+                [
+                    TaskStatus.PENDING.value,
+                    TaskStatus.IN_PROGRESS.value,
+                    TaskStatus.BLOCKED.value,
+                    TaskStatus.REVIEW.value,
+                ]
+            ),
         )
 
         if project_id:
@@ -728,14 +757,20 @@ class TaskService:
             List of available task database models
         """
         # Get pending or blocked tasks assigned to this agent
-        stmt = select(TaskDB).where(
-            TaskDB.assigned_to == agent_id,
-            TaskDB.assigned_to_type == "agent",
-            TaskDB.status.in_([
-                TaskStatus.PENDING.value,
-                TaskStatus.BLOCKED.value,
-            ]),
-        ).order_by(TaskDB.priority.desc(), TaskDB.created_at.asc()).limit(limit)
+        stmt = (
+            select(TaskDB)
+            .where(
+                TaskDB.agent_assigned_to == agent_id,
+                TaskDB.status.in_(
+                    [
+                        TaskStatus.PENDING.value,
+                        TaskStatus.BLOCKED.value,
+                    ]
+                ),
+            )
+            .order_by(TaskDB.priority.desc(), TaskDB.created_at.asc())
+            .limit(limit)
+        )
 
         result = await self._session.execute(stmt)
         tasks = list(result.scalars().all())

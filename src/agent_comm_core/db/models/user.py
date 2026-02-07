@@ -7,7 +7,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, String, Text, Uuid, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
 
@@ -100,6 +100,20 @@ class UserDB(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+    # Relationships
+    sent_messages = relationship(
+        "ChatMessageDB",
+        foreign_keys="ChatMessageDB.user_sender_id",
+        back_populates="user_sender",
+        lazy="selectin",
+    )
+    assigned_tasks = relationship(
+        "TaskDB",
+        foreign_keys="TaskDB.user_assigned_to",
+        back_populates="assigned_user",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:

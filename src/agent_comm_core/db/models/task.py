@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, Uuid
+from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent_comm_core.db.base import Base
@@ -85,24 +85,46 @@ class TaskDB(Base):
         default=None,
     )
 
-    # Assignment
-    assigned_to: Mapped[UUID | None] = mapped_column(
+    # Assignment - separate columns for user and agent with proper FKs
+    # Application logic ensures only one is set
+    user_assigned_to: Mapped[UUID | None] = mapped_column(
+        "user_assigned_to",
         Uuid,
+        ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         default=None,
         index=True,
     )
+    agent_assigned_to: Mapped[UUID | None] = mapped_column(
+        "agent_assigned_to",
+        Uuid,
+        ForeignKey("agents.id", ondelete="SET NULL"),
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
+    # Legacy assigned_to_type for backward compatibility (deprecated)
     assigned_to_type: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         default=None,  # "agent" or "user"
     )
 
+    # Legacy assigned_to for backward compatibility (deprecated)
+    assigned_to: Mapped[UUID | None] = mapped_column(
+        Uuid,
+        nullable=True,
+        default=None,
+        index=True,
+    )
+
     # Creator tracking
+    # Note: User deletion will SET NULL, so nullable=True is required
     created_by: Mapped[UUID] = mapped_column(
         Uuid,
         ForeignKey("users.id", ondelete="SET NULL"),
-        nullable=False,
+        nullable=True,  # Changed from False to allow NULL on user deletion
     )
 
     # Dependencies (JSON array of task IDs)
@@ -139,9 +161,33 @@ class TaskDB(Base):
     )
 
     # Relationships
-    project = relationship("ProjectDB", backref="tasks")
-    room = relationship("ChatRoomDB", backref="tasks")
-    creator = relationship("UserDB", backref="created_tasks")
+    project = relationship("ProjectDB", backref="tasks", lazy="selectin")
+    room = relationship("ChatRoomDB", backref="tasks", lazy="joined")
+    creator = relationship(
+        "UserDB", foreign_keys=[created_by], backref="created_tasks", lazy="selectin"
+    )
+    assigned_user = relationship(
+        "UserDB", foreign_keys=[user_assigned_to], back_populates="assigned_tasks", lazy="joined"
+    )
+    assigned_agent = relationship(
+        "AgentDB", foreign_keys=[agent_assigned_to], back_populates="assigned_tasks", lazy="joined"
+    )
+
+    # Constraints and indexes
+    __table_args__ = (
+        Index("ix_tasks_project_status", "project_id", "status"),
+        Index("ix_tasks_user_assigned_status", "user_assigned_to", "status"),
+        Index("ix_tasks_agent_assigned_status", "agent_assigned_to", "status"),
+    )
+
+    @property
+    def actual_assigned_to(self) -> UUID | None:
+        """Get the actual assigned UUID based on assignment type."""
+        if self.user_assigned_to:
+            return self.user_assigned_to
+        if self.agent_assigned_to:
+            return self.agent_assigned_to
+        return None
 
     def __repr__(self) -> str:
         return f"<TaskDB(id={self.id}, title={self.title}, status={self.status})>"

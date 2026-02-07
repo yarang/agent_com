@@ -856,7 +856,25 @@ async function handleAgentRegistration() {
 
     try {
         // Get selected project ID for the new agent
-        const selectedProject = typeof getSelectedProjectId === 'function' ? getSelectedProjectId() : null;
+        let selectedProject = typeof getSelectedProjectId === 'function' ? getSelectedProjectId() : null;
+
+        // If no project is selected, try to automatically select the first available project
+        if (!selectedProject && typeof fetchProjects === 'function') {
+            const projectsData = await fetchProjects();
+            const availableProjects = projectsData?.projects?.filter(p => p.project_id) || [];
+
+            if (availableProjects.length > 0) {
+                // Auto-select the first project
+                selectedProject = availableProjects[0].project_id;
+                if (typeof selectProject === 'function') {
+                    await selectProject(selectedProject);
+                }
+            } else {
+                // No projects exist
+                showRegistrationError('프로젝트가 없습니다. 먼저 프로젝트를 생성해주세요. No projects found. Please create a project first.');
+                return;
+            }
+        }
 
         // Validate: project must be selected
         if (!selectedProject) {

@@ -101,6 +101,18 @@ class AgentDB(Base):
     project = relationship("ProjectDB", back_populates="agents")
     api_keys = relationship("AgentApiKeyDB", back_populates="agent", cascade="all, delete-orphan")
     participants = relationship("ChatParticipantDB", back_populates="agent")
+    sent_messages = relationship(
+        "ChatMessageDB",
+        foreign_keys="ChatMessageDB.agent_sender_id",
+        back_populates="agent_sender",
+        lazy="selectin",
+    )
+    assigned_tasks = relationship(
+        "TaskDB",
+        foreign_keys="TaskDB.agent_assigned_to",
+        back_populates="assigned_agent",
+        lazy="selectin",
+    )
 
     # Constraints
     __table_args__ = (UniqueConstraint("project_id", "name", name="uq_agent_project_name"),)
