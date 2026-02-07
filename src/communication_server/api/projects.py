@@ -47,6 +47,7 @@ class ProjectCreateResponse(BaseModel):
 class ProjectInfo(BaseModel):
     """Public information about a project."""
 
+    id: str | None  # Database UUID (may be None for in-memory projects)
     project_id: str
     name: str
     description: str
@@ -374,6 +375,7 @@ async def list_projects(
         counts = project_counts.get(project.project_id, {"total": 0, "online": 0})
         projects.append(
             {
+                "id": str(project.id) if project.id else None,
                 "project_id": project.project_id,
                 "name": project.metadata.name,
                 "description": project.metadata.description,

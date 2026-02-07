@@ -221,6 +221,7 @@ class ProjectMapper:
         # Use model_construct to bypass validation when loading from DB
         # (API keys from DB are placeholders and may be empty)
         return ProjectDefinition.model_construct(
+            id=db_project.id,  # Set database UUID
             project_id=db_project.project_id,
             metadata=metadata,
             api_keys=api_keys,

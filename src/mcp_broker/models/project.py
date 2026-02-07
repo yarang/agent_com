@@ -50,9 +50,7 @@ class ProjectAPIKey(BaseModel):
         """
         parts = v.split("_")
         if len(parts) < 3:
-            raise ValueError(
-                "API key must follow format: {project_id}_{key_id}_{secret}"
-            )
+            raise ValueError("API key must follow format: {project_id}_{key_id}_{secret}")
         return v
 
 
@@ -71,7 +69,9 @@ class ProjectConfig(BaseModel):
     max_sessions: int = Field(default=100, ge=1, description="Maximum concurrent sessions")
     max_protocols: int = Field(default=50, ge=1, description="Maximum protocol versions")
     max_message_queue_size: int = Field(default=100, ge=1, description="Max messages per queue")
-    allow_cross_project: bool = Field(default=False, description="Allow cross-project communication")
+    allow_cross_project: bool = Field(
+        default=False, description="Allow cross-project communication"
+    )
     discoverable: bool = Field(default=True, description="Include in project discovery")
     shared_protocols: list[str] = Field(
         default_factory=list,
@@ -96,7 +96,9 @@ class CrossProjectPermission(BaseModel):
         default_factory=list,
         description="Allowed protocol names for communication",
     )
-    message_rate_limit: int = Field(default=0, ge=0, description="Messages per minute (0=unlimited)")
+    message_rate_limit: int = Field(
+        default=0, ge=0, description="Messages per minute (0=unlimited)"
+    )
 
 
 class ProjectMetadata(BaseModel):
@@ -170,6 +172,10 @@ class ProjectDefinition(BaseModel):
         status: Project status information
     """
 
+    id: UUID | None = Field(
+        default=None,
+        description="Database UUID (populated when loaded from database)",
+    )
     project_id: str = Field(
         pattern=r"^[a-z][a-z0-9_]*[a-z0-9]$",
         description="Unique project identifier (snake_case)",
@@ -220,8 +226,7 @@ class ProjectDefinition(BaseModel):
         reserved = {"system", "admin", "root"}
         if v.lower() in reserved:
             raise ValueError(
-                f"Project ID '{v}' is reserved. "
-                f"Reserved words: {', '.join(sorted(reserved))}"
+                f"Project ID '{v}' is reserved. Reserved words: {', '.join(sorted(reserved))}"
             )
         return v
 
