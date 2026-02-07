@@ -163,7 +163,7 @@ async def get_project_repository(
     return ProjectRepository(session)
 
 
-def get_project_registry_session_factory() -> AsyncGenerator[AsyncSession]:
+async def get_project_registry_session_factory() -> AsyncGenerator[AsyncSession]:
     """
     Get a database session factory for the ProjectRegistry.
 
