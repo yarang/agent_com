@@ -24,7 +24,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic
 revision = "002_add_agent_api_key_user_fk"
-down_revision = "001_create_mediator_tables"
+down_revision = None  # Base migration
 branch_labels = None
 depends_on = None
 
