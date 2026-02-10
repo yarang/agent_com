@@ -24,7 +24,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic
 revision = "002_add_agent_api_key_user_fk"
-down_revision = None  # Base migration
+down_revision = None  # Base migration (001 was missing, keeping as base)
 branch_labels = None
 depends_on = None
 
